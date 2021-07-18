@@ -23,6 +23,7 @@ dependencies:
 - base >= 4.7 && < 5
 - http-conduit
 - aeson
+- bytestring
 
 
 library:
@@ -38,6 +39,8 @@ executables:
     - -with-rtsopts=-N
     - -Wall
     - -Werror
+    default-extensions:
+    - OverloadedStrings
     dependencies:
     - echoBot
 

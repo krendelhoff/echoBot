@@ -33,6 +33,7 @@ library
   build-depends:
       aeson
     , base >=4.7 && <5
+    , bytestring
     , http-conduit
   default-language: Haskell2010
 
@@ -42,10 +43,13 @@ executable echoBot-exe
       Paths_echoBot
   hs-source-dirs:
       app
+  default-extensions:
+      OverloadedStrings
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror
   build-depends:
       aeson
     , base >=4.7 && <5
+    , bytestring
     , echoBot
     , http-conduit
   default-language: Haskell2010
@@ -61,6 +65,7 @@ test-suite echoBot-test
   build-depends:
       aeson
     , base >=4.7 && <5
+    , bytestring
     , echoBot
     , http-conduit
   default-language: Haskell2010
