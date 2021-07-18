@@ -24,6 +24,7 @@ dependencies:
 - http-conduit
 - aeson
 - bytestring
+- text
 
 
 library:
@@ -41,6 +42,7 @@ executables:
     - -Werror
     default-extensions:
     - OverloadedStrings
+    - DeriveGeneric
     dependencies:
     - echoBot
 
