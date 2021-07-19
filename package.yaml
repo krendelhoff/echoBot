@@ -26,10 +26,14 @@ dependencies:
 - yaml
 - bytestring
 - text
+- mtl
 
 
 library:
   source-dirs: src
+  default-extensions:
+  - OverloadedStrings
+  - DeriveGeneric
   
 executables:
   echoBot-exe:
