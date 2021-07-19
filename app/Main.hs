@@ -42,15 +42,9 @@ data Chat =
     }
   deriving (Show, Generic)
 
-{-
-token :: BC.ByteString
-token = "1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU"
--}
-baseRequest =
-  "https://api.telegram.org/bot1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU/"
-
 getUpdatesRequest :: Request
 getUpdatesRequest =
+  setRequestQueryString [("timeout", Just "10"), ("offset", Just "994852167")] $
   setRequestMethod "GET" $
   setRequestSecure True $
   "https://api.telegram.org/bot1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU/getUpdates"
