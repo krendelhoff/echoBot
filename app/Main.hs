@@ -1,8 +1,12 @@
 module Main where
 
+import           Control.Monad         (forever)
 import           Data.Aeson
-import qualified Data.ByteString.Lazy as L
-import qualified Data.Text            as T
+import qualified Data.ByteString.Char8 as BC
+import           Data.Foldable         (traverse_)
+import           Data.IORef
+import qualified Data.Text             as T
+import qualified Data.Text.IO          as TIO
 import           GHC.Generics
 import           Network.HTTP.Simple
 
@@ -42,26 +46,43 @@ data Chat =
     }
   deriving (Show, Generic)
 
-getUpdatesRequest :: Request
-getUpdatesRequest =
-  setRequestQueryString [("timeout", Just "10"), ("offset", Just "994852167")] $
+getUpdatesRequest :: BC.ByteString -> Request
+getUpdatesRequest offset =
+  setRequestQueryString [("timeout", Just "10"), ("offset", Just offset)] $
   setRequestMethod "GET" $
   setRequestSecure True $
   "https://api.telegram.org/bot1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU/getUpdates"
 
---sendMessageRequest :: Int -> BC.ByteString -> Request
---sendMessageRequest chat_id text = set
 main :: IO ()
 main = do
-  response <- httpLBS $ getUpdatesRequest
-  let code = getResponseStatusCode response
-  putStrLn $ mconcat ["Response code is ", show code]
-  if code == 200
-    then do
-      let body = getResponseBody response
-      putStrLn "writing to file..."
-      L.writeFile "updates.json" body
-      putStrLn "What was written?"
-      let updates = decode body :: Maybe Updates
-      maybe (putStrLn "Parse Error") print updates
-    else putStrLn "request failed with error"
+  lastOffset <- newIORef 0
+  forever $ do
+    value <- readIORef lastOffset
+    response <- httpBS $ getUpdatesRequest (BC.pack . show $ value)
+    let code = getResponseStatusCode response
+    putStrLn $ mconcat ["Response code is ", show code]
+    if code == 200
+      then do
+        let body = getResponseBody response
+        putStrLn "writing to file..."
+        BC.writeFile "updates.json" body
+        putStrLn "What was written?"
+        let updates = decodeStrict body :: Maybe Updates
+        maybe
+          (putStrLn "Parse Error")
+          (\upDates -> do
+             let updateList = result upDates
+             traverse_
+               (\x -> do
+                  writeIORef lastOffset (update_id x + 1)
+                  TIO.putStrLn $
+                    mconcat
+                      [ (username (chat (message x)))
+                      , " wrote: "
+                      , text (message x)
+                      ])
+               updateList)
+          updates
+        putStr "last offset: "
+        readIORef lastOffset >>= print
+      else putStrLn "request failed with error"
