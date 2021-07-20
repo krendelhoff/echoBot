@@ -1,9 +1,10 @@
 module Main where
 
 import           Control.Monad.Except
-import qualified Data.ByteString.Char8 as BC
+import qualified Data.ByteString.Char8  as BC
 import           Data.IORef
 
+import           Telegram.Configuration
 import           Telegram.Echo
 import           Telegram.GetUpdates
 import           Telegram.ParseJSON
@@ -15,6 +16,8 @@ refreshOffset updates _ = succ . update_id . last . result $ updates
 bot :: IORef Int -> ExceptT String IO ()
 bot lastOffset = do
   offsetValue <- liftIO $ readIORef lastOffset
+  env <- parseConfig
+  liftIO $ print env
   updatesJSON <- getUpdates offsetValue
   updates <- parseUpdatesJSON updatesJSON
   liftIO $ writeIORef lastOffset (refreshOffset updates offsetValue)
