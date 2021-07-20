@@ -19,9 +19,13 @@ bot lastOffset = do
   env <- parseConfig
   liftIO $ print env
   updatesJSON <- getUpdates offsetValue
+  -- debug
+  liftIO $ BC.appendFile "updates.json" updatesJSON
+  -- debug
   updates <- parseUpdatesJSON updatesJSON
   liftIO $ writeIORef lastOffset (refreshOffset updates offsetValue)
   echo updates
+  -- TODO поверх всего что есть (кроме бот) присобачить ReaderT
 
 debug :: ExceptT String IO ()
 debug = do
