@@ -1,4 +1,4 @@
-module ParseJSON
+module Telegram.ParseJSON
   ( parseUpdatesJSON
   , Updates(..)
   , Update(..)
@@ -32,12 +32,21 @@ instance FromJSON Update
 
 data Message =
   Message
-    { chat :: Chat
-    , text :: T.Text
+    { chat    :: Chat
+    , text    :: Maybe T.Text
+    , sticker :: Maybe Sticker
     }
   deriving (Show, Generic)
 
 instance FromJSON Message
+
+data Sticker =
+  Sticker
+    { file_id :: T.Text
+    }
+  deriving (Show, Generic)
+
+instance FromJSON Sticker
 
 data Chat =
   Chat

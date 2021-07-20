@@ -43,8 +43,6 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    - -Wall
-    - -Werror
     default-extensions:
     - OverloadedStrings
     - DeriveGeneric

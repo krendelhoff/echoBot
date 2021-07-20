@@ -1,4 +1,4 @@
-module Echo
+module Telegram.Echo
   ( echo
   ) where
 
@@ -7,7 +7,7 @@ import qualified Data.ByteString.Char8 as BC
 import           Data.Text.Encoding    (encodeUtf8)
 import           Network.HTTP.Simple
 
-import qualified ParseJSON             as PJ
+import qualified Telegram.ParseJSON    as PJ
 
 -- вспомнить про то как используя ExceptT накапливать все ошибки, а не останавливаться на первой(stepik)
 sendMessageRequest :: BC.ByteString -> BC.ByteString -> Request
@@ -17,7 +17,8 @@ sendMessageRequest idValue textValue =
   setRequestSecure True $
   "https://api.telegram.org/bot1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU/sendMessage"
 
-echo :: PJ.Updates -> ExceptT String IO ()
+echo = undefined
+  {-echo :: PJ.Updates -> ExceptT String IO ()
 echo updates = do
   forM_
     (PJ.result updates)
@@ -29,4 +30,4 @@ echo updates = do
        case getResponseStatusCode response of
          200 -> return ()
          code ->
-           throwError $ "Big problem marked by the " <> show code <> " code")
+           throwError $ "Big problem marked by the " <> show code <> " code")-}

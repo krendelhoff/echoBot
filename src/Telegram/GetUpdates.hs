@@ -1,4 +1,4 @@
-module GetUpdates
+module Telegram.GetUpdates
   ( getUpdates
   ) where
 
