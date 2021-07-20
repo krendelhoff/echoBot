@@ -4,6 +4,7 @@ module Telegram.ParseJSON
   , Update(..)
   , Message(..)
   , Chat(..)
+  , Sticker(..)
   ) where
 
 import           Control.Monad.Except

@@ -8,7 +8,7 @@ import           Network.HTTP.Simple
 
 getUpdatesRequest :: BC.ByteString -> Request
 getUpdatesRequest offset =
-  setRequestQueryString [("timeout", Just "10"), ("offset", Just offset)] $
+  setRequestQueryString [("timeout", Just "5"), ("offset", Just offset)] $
   setRequestMethod "GET" $
   setRequestSecure True $
   "https://api.telegram.org/bot1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU/getUpdates"
