@@ -11,13 +11,16 @@ import           Telegram.ParseJSON
 import           Telegram.Request.GetUpdates
 
 refreshOffset :: Updates -> Int -> Int
-refreshOffset (Updates {result = []}) offsetValue = succ offsetValue
+refreshOffset (Updates {result = []}) offsetValue = offsetValue
 refreshOffset updates _ = succ . update_id . last . result $ updates
 
 bot :: IORef Int -> ReaderT Config (ExceptT String IO) ()
 bot lastOffset = do
   offsetValue <- liftIO $ readIORef lastOffset
   updatesJSON <- getUpdates offsetValue
+  -- debug
+  liftIO $ BC.appendFile "updates.json" updatesJSON
+  -- debug
   updates <- lift $ parseUpdatesJSON updatesJSON
   liftIO $ writeIORef lastOffset (refreshOffset updates offsetValue)
   echoBot updates
