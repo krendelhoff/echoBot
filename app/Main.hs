@@ -20,8 +20,8 @@ bot lastOffset = do
   updatesJSON <- getUpdates offsetValue
   updates <- lift $ parseUpdatesJSON updatesJSON
   liftIO $ print updates
+  liftIO $ writeIORef lastOffset (refreshOffset updates offsetValue)
 
---  liftIO $ writeIORef lastOffset (refreshOffset updates offsetValue)
 main :: IO ()
 main = do
   lastOffset <- newIORef 0
