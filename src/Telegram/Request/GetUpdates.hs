@@ -1,14 +1,15 @@
-module Telegram.GetUpdates
+module Telegram.Request.GetUpdates
   ( getUpdates
   ) where
 
 import           Control.Monad.Except
-import qualified Data.ByteString.Char8 as BC
+import           Control.Monad.Reader
+import qualified Data.ByteString.Char8  as BC
+import           Data.Text.Encoding     (encodeUtf8)
 import           Network.HTTP.Simple
-import           Telegram.Request
 
-token :: BC.ByteString
-token = "1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU"
+import           Telegram.Configuration
+import           Telegram.Request
 
 getUpdatesRequest :: BC.ByteString -> BC.ByteString -> BC.ByteString -> Request
 getUpdatesRequest offset token timeout =
@@ -21,10 +22,16 @@ getUpdatesRequest offset token timeout =
 intToByteString :: Int -> BC.ByteString
 intToByteString = BC.pack . show
 
-getUpdates :: Int -> ExceptT String IO BC.ByteString
+getUpdates :: Int -> ReaderT Config (ExceptT String IO) BC.ByteString
 getUpdates offsetValue = do
+  config <- ask
   response <-
-    liftIO $ httpBS $ getUpdatesRequest (intToByteString offsetValue) token "5"
+    liftIO $
+    httpBS $
+    getUpdatesRequest
+      (intToByteString offsetValue)
+      (encodeUtf8 . token $ config)
+      (intToByteString $ timeout config)
   case getResponseStatusCode response of
     200 -> do
       return (getResponseBody response)

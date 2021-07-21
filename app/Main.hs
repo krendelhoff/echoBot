@@ -1,41 +1,35 @@
 module Main where
 
 import           Control.Monad.Except
-import qualified Data.ByteString.Char8  as BC
+import           Control.Monad.Reader
+import qualified Data.ByteString.Char8       as BC
 import           Data.IORef
 
 import           Telegram.Configuration
 import           Telegram.Echo
-import           Telegram.GetUpdates
 import           Telegram.ParseJSON
+import           Telegram.Request.GetUpdates
 
 refreshOffset :: Updates -> Int -> Int
 refreshOffset (Updates {result = []}) offsetValue = succ offsetValue
 refreshOffset updates _ = succ . update_id . last . result $ updates
 
-bot :: IORef Int -> ExceptT String IO ()
+bot :: IORef Int -> ReaderT Config (ExceptT String IO) ()
 bot lastOffset = do
   offsetValue <- liftIO $ readIORef lastOffset
-  updatesJSON <- (getUpdates offsetValue)
-  -- debug
-  liftIO $ BC.appendFile "updates.json" updatesJSON
-  -- debug
-  updates <- parseUpdatesJSON updatesJSON
-  liftIO $ writeIORef lastOffset (refreshOffset updates offsetValue)
-  echo updates
-  -- TODO поверх всего что есть присобачить ReaderT
-
-debug :: ExceptT String IO ()
-debug = do
-  updatesJSON <- getUpdates 0
-  updates <- parseUpdatesJSON updatesJSON
-  liftIO $ BC.writeFile "updates.json" updatesJSON
+  updatesJSON <- getUpdates offsetValue
+  updates <- lift $ parseUpdatesJSON updatesJSON
   liftIO $ print updates
 
+--  liftIO $ writeIORef lastOffset (refreshOffset updates offsetValue)
 main :: IO ()
 main = do
   lastOffset <- newIORef 0
---  env <- parseConfig
-  forever $ do
-    res <- runExceptT $ bot lastOffset
-    either putStrLn (const $ return ()) res
+  eitherConfig <- runExceptT parseConfig
+  either
+    putStrLn
+    (\config -> do
+       forever $ do
+         res <- runExceptT $ runReaderT (bot lastOffset) config
+         either putStrLn (const $ return ()) res)
+    eitherConfig

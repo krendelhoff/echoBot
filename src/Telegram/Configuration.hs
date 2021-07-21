@@ -1,5 +1,6 @@
 module Telegram.Configuration
   ( parseConfig
+  , Config(..)
   ) where
 
 import           Control.Monad.Except
