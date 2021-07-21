@@ -16,16 +16,14 @@ refreshOffset updates _ = succ . update_id . last . result $ updates
 bot :: IORef Int -> ExceptT String IO ()
 bot lastOffset = do
   offsetValue <- liftIO $ readIORef lastOffset
-  env <- parseConfig
-  liftIO $ print env
-  updatesJSON <- getUpdates offsetValue
+  updatesJSON <- (getUpdates offsetValue)
   -- debug
   liftIO $ BC.appendFile "updates.json" updatesJSON
   -- debug
   updates <- parseUpdatesJSON updatesJSON
   liftIO $ writeIORef lastOffset (refreshOffset updates offsetValue)
   echo updates
-  -- TODO поверх всего что есть (кроме бот) присобачить ReaderT
+  -- TODO поверх всего что есть присобачить ReaderT
 
 debug :: ExceptT String IO ()
 debug = do
@@ -37,6 +35,7 @@ debug = do
 main :: IO ()
 main = do
   lastOffset <- newIORef 0
+--  env <- parseConfig
   forever $ do
     res <- runExceptT $ bot lastOffset
     either putStrLn (const $ return ()) res
