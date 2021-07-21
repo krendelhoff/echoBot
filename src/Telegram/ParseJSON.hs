@@ -58,6 +58,8 @@ data Chat =
 
 instance FromJSON Chat
 
+-- непонятно зачем тут IO вообще присобачено к чистому коду, но пока не знаю
+-- как избавиться
 parseUpdatesJSON :: BC.ByteString -> ExceptT String IO Updates
 parseUpdatesJSON updatesJSON = do
   either
