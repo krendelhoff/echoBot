@@ -46,6 +46,7 @@ executables:
     default-extensions:
     - OverloadedStrings
     - DeriveGeneric
+    - DuplicateRecordFields
     dependencies:
     - echoBot
 

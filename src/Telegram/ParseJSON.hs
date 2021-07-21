@@ -36,16 +36,20 @@ data Message =
     { chat    :: Chat
     , text    :: Maybe T.Text
     , sticker :: Maybe Sticker
-    , photo   :: Maybe [Sticker]
+    , photo   :: Maybe [Photo]
     , caption :: Maybe Text
     }
   deriving (Show, Generic)
 
 instance FromJSON Message
-  {-data Photo =
+
+data Photo =
   Photo
     { file_id :: T.Text
-    } deriving (Show, Generic)-}
+    }
+  deriving (Show, Generic)
+
+instance FromJSON Photo
 
 data Sticker =
   Sticker

@@ -22,12 +22,11 @@ sendPhotoRequest chat_id photo caption token =
     , ("photo", Just photo)
     ]
 
--- TODO что-то адекватное
-instance AttemptRequest Sticker where
+instance AttemptRequest (Photo, Text) where
   tryPerformRequest _ _ Nothing                 = return ()
   tryPerformRequest userid token (Just sticker) = echo userid token sticker
 
-instance EchoRequest Sticker where
+instance EchoRequest (Photo, Text) where
   echo userid token sticker =
     performEchoRequest $
     sendStickerRequest userid (encodeUtf8 . file_id $ sticker) token
