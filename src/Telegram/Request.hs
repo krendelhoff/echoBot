@@ -1,5 +1,5 @@
-module Telegram.MakeRequest
-  ( makeRequest
+module Telegram.Request
+  ( createRequest
   ) where
 
 import qualified Data.ByteString.Char8 as BC
@@ -13,8 +13,8 @@ type QueryString = [(BC.ByteString, Maybe BC.ByteString)]
 
 type APIMethod = BC.ByteString
 
-makeRequest :: HTTPMethod -> Token -> APIMethod -> QueryString -> Request
-makeRequest hmethod token amethod qstr =
+createRequest :: HTTPMethod -> Token -> APIMethod -> QueryString -> Request
+createRequest hmethod token amethod qstr =
   setRequestMethod hmethod $
   setRequestSecure True $
   setRequestPort 443 $

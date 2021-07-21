@@ -4,16 +4,16 @@ module Telegram.Echo
   ) where
 
 import           Control.Monad.Except
-import qualified Data.ByteString.Char8     as BC
-import           Data.Text.Encoding        (encodeUtf8)
+import qualified Data.ByteString.Char8        as BC
+import           Data.Text.Encoding           (encodeUtf8)
 import           Network.HTTP.Simple
 
-import           Telegram.Echo.SendMessage
-import           Telegram.Echo.SendSticker
-import qualified Telegram.ParseJSON        as PJ
+import qualified Telegram.ParseJSON           as PJ
+import           Telegram.Request.SendMessage
+import           Telegram.Request.SendSticker
 
 debugRequest :: PJ.Update -> Request -> ExceptT String IO ()
-debugRequest update _ = do
+debugRequest update _ = undefined {-do
   let (Just sticker) = PJ.sticker $ PJ.message $ update
       fileId = PJ.file_id sticker
       idValue = BC.pack $ show (PJ.id $ PJ.chat $ PJ.message $ update)
@@ -21,16 +21,17 @@ debugRequest update _ = do
   case getResponseStatusCode response of
     200  -> return ()
     code -> throwError $ "Big problem marked by the " <> show code <> " code"
+    -}
 
-makeRequest :: Request -> ExceptT String IO ()
-makeRequest request = do
+performRequest :: Request -> ExceptT String IO ()
+performRequest request = do
   response <- liftIO $ httpBS request
   case getResponseStatusCode response of
     200  -> return ()
     code -> throwError $ "Big problem marked by the " <> show code <> " code"
 
 echo :: PJ.Updates -> ExceptT String IO ()
-echo updates = do
+echo updates = undefined {-do
   forM_
     (PJ.result updates)
     (\update -> do
@@ -48,4 +49,4 @@ echo updates = do
          (\sticker -> do
             makeRequest $
               sendStickerRequest idValue (encodeUtf8 . PJ.file_id $ sticker))
-         sticker)
+         sticker)-}
