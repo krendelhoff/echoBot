@@ -5,6 +5,7 @@ module Telegram.ParseJSON
   , Message(..)
   , Chat(..)
   , Sticker(..)
+  , Photo(..)
   ) where
 
 import           Control.Monad.Except
@@ -37,7 +38,7 @@ data Message =
     , text    :: Maybe T.Text
     , sticker :: Maybe Sticker
     , photo   :: Maybe [Photo]
-    , caption :: Maybe Text
+    , caption :: Maybe T.Text
     }
   deriving (Show, Generic)
 
@@ -45,11 +46,12 @@ instance FromJSON Message
 
 data Photo =
   Photo
-    { file_id :: T.Text
+    { fileId :: T.Text
     }
-  deriving (Show, Generic)
+  deriving (Show)
 
-instance FromJSON Photo
+instance FromJSON Photo where
+  parseJSON (Object v) = Photo <$> v .: "file_id"
 
 data Sticker =
   Sticker

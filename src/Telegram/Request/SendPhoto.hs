@@ -16,17 +16,23 @@ sendPhotoRequest chat_id photo caption token =
   createRequest
     "POST"
     token
-    "sendSticker"
+    "sendPhoto"
     [ ("chat_id", Just chat_id)
     , ("caption", Just caption)
     , ("photo", Just photo)
     ]
 
-instance AttemptRequest (Photo, Text) where
-  tryPerformRequest _ _ Nothing                 = return ()
-  tryPerformRequest userid token (Just sticker) = echo userid token sticker
+instance AttemptRequest ([Photo], Text) where
+  tryPerformRequest _ _ Nothing = return ()
+  tryPerformRequest _ _ (Just ([], _)) = return ()
+  tryPerformRequest userid token (Just (photo, caption)) =
+    echo userid token (photo, caption)
 
-instance EchoRequest (Photo, Text) where
-  echo userid token sticker =
+instance EchoRequest ([Photo], Text) where
+  echo userid token ((photo:_), caption) =
     performEchoRequest $
-    sendStickerRequest userid (encodeUtf8 . file_id $ sticker) token
+    sendPhotoRequest
+      userid
+      (encodeUtf8 . fileId $ photo)
+      (encodeUtf8 caption)
+      token

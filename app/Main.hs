@@ -20,8 +20,9 @@ bot lastOffset = do
   updatesJSON <- getUpdates offsetValue
   -- debug
   liftIO $ BC.appendFile "updates.json" updatesJSON
-  -- debug
   updates <- lift $ parseUpdatesJSON updatesJSON
+  -- debug
+  liftIO $ BC.appendFile "updates.hajson" $ BC.pack $ show updates
   liftIO $ writeIORef lastOffset (refreshOffset updates offsetValue)
   echoBot updates
 

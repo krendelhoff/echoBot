@@ -4,6 +4,7 @@ module Telegram.Echo
 
 import           Control.Monad.Except
 import           Control.Monad.Reader
+import           Data.Bitraversable           (bisequence)
 import qualified Data.ByteString.Char8        as BC
 import           Data.Text                    (Text)
 import           Data.Text.Encoding           (encodeUtf8)
@@ -13,11 +14,8 @@ import           Telegram.Configuration
 import qualified Telegram.ParseJSON           as PJ
 import           Telegram.Request
 import           Telegram.Request.SendMessage
+import           Telegram.Request.SendPhoto
 import           Telegram.Request.SendSticker
-
-type UserId = BC.ByteString
-
-type Token = BC.ByteString
 
 echoBot :: PJ.Updates -> ReaderT Config (ExceptT String IO) ()
 echoBot updates = do
@@ -32,4 +30,4 @@ echoBot updates = do
            photo = PJ.photo $ PJ.message $ update
        lift $ tryPerformRequest idValue tokenValue sticker
        lift $ tryPerformRequest idValue tokenValue textMessage
-       lift $ tryPerformRequest idValue tokenValue (photo, caption))
+       lift $ tryPerformRequest idValue tokenValue (bisequence (photo, caption)))
