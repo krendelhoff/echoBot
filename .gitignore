@@ -6,3 +6,4 @@ token
 report.html
 updates.json
 echoBot.cabal
+stack.yaml.lock
