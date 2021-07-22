@@ -11,13 +11,14 @@ import           Telegram.ParseJSON
 import           Telegram.Request
 
 sendPhotoRequest ::
-     BC.ByteString -> BC.ByteString -> BC.ByteString -> BC.ByteString -> Request
+     BC.ByteString
+  -> BC.ByteString
+  -> Maybe BC.ByteString
+  -> BC.ByteString
+  -> Request
 sendPhotoRequest chat_id photo caption token =
   createRequest
     "POST"
     token
     "sendPhoto"
-    [ ("chat_id", Just chat_id)
-    , ("caption", Just caption)
-    , ("photo", Just photo)
-    ]
+    [("chat_id", Just chat_id), ("caption", caption), ("photo", Just photo)]

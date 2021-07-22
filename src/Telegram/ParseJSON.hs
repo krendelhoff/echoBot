@@ -4,6 +4,7 @@ module Telegram.ParseJSON
   , Update(..)
   , Message(..)
   , Photo(..)
+  , Chat(..)
   , Sticker(..)
   ) where
 
