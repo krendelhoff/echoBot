@@ -32,44 +32,6 @@ data Update =
 
 instance FromJSON Update
 
-data Message =
-  Message
-    { chat    :: Chat
-    , text    :: Maybe T.Text
-    , sticker :: Maybe Sticker
-    , photo   :: Maybe [Photo]
-    , caption :: Maybe T.Text
-    }
-  deriving (Show, Generic)
-
-instance FromJSON Message
-
-data Photo =
-  Photo
-    { fileId :: T.Text
-    }
-  deriving (Show)
-
-instance FromJSON Photo where
-  parseJSON (Object v) = Photo <$> v .: "file_id"
-
-data Sticker =
-  Sticker
-    { file_id :: T.Text
-    }
-  deriving (Show, Generic)
-
-instance FromJSON Sticker
-
-data Chat =
-  Chat
-    { id       :: Int
-    , username :: T.Text
-    }
-  deriving (Show, Generic)
-
-instance FromJSON Chat
-
 -- непонятно зачем тут IO вообще присобачено к чистому коду, но пока не знаю
 -- как избавиться
 parseUpdatesJSON :: BC.ByteString -> ExceptT String IO Updates

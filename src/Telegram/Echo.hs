@@ -20,14 +20,4 @@ import           Telegram.Request.SendSticker
 echoBot :: PJ.Updates -> ReaderT Config (ExceptT String IO) ()
 echoBot updates = do
   tokenValue <- asks (encodeUtf8 . token)
-  forM_
-    (PJ.result updates)
-    (\update -> do
-       let idValue = BC.pack $ show (PJ.id $ PJ.chat $ PJ.message $ update)
-           textMessage = PJ.text $ PJ.message $ update
-           sticker = PJ.sticker $ PJ.message $ update
-           caption = PJ.caption $ PJ.message $ update
-           photo = PJ.photo $ PJ.message $ update
-       lift $ tryPerformRequest idValue tokenValue sticker
-       lift $ tryPerformRequest idValue tokenValue textMessage
-       lift $ tryPerformRequest idValue tokenValue (bisequence (photo, caption)))
+  forM_ (PJ.result updates) (\update -> undefined)
