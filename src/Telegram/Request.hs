@@ -1,8 +1,7 @@
 module Telegram.Request
   ( createRequest
-  , AttemptRequest(..)
-  , EchoRequest(..)
   , performEchoRequest
+  , Token
   ) where
 
 import           Control.Monad.Except
@@ -38,11 +37,3 @@ performEchoRequest request = do
   case getResponseStatusCode response of
     200  -> return ()
     code -> throwError $ "Big problem marked by the " <> show code <> " code"
-
-class EchoRequest a =>
-      AttemptRequest a
-  where
-  tryPerformRequest :: UserId -> Token -> Maybe a -> ExceptT String IO ()
-
-class EchoRequest a where
-  echo :: UserId -> Token -> a -> ExceptT String IO ()

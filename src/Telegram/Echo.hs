@@ -4,20 +4,24 @@ module Telegram.Echo
 
 import           Control.Monad.Except
 import           Control.Monad.Reader
-import           Data.Bitraversable           (bisequence)
-import qualified Data.ByteString.Char8        as BC
-import           Data.Text                    (Text)
 import           Data.Text.Encoding           (encodeUtf8)
-import           Network.HTTP.Simple
 
 import           Telegram.Configuration
-import qualified Telegram.ParseJSON           as PJ
+
+--import           Telegram.Echo.Photo
+--import           Telegram.Echo.Sticker
+import           Telegram.Echo.TextMessage
+import           Telegram.ParseJSON
 import           Telegram.Request
 import           Telegram.Request.SendMessage
 import           Telegram.Request.SendPhoto
 import           Telegram.Request.SendSticker
 
-echoBot :: PJ.Updates -> ReaderT Config (ExceptT String IO) ()
+echo :: Message -> ReaderT Config (ExceptT String IO) ()
+echo m@(TextMessage {})    = echoTextMessage m
+echo m@(PhotoMessage {})   = undefined
+echo m@(StickerMessage {}) = undefined
+
+echoBot :: Updates -> ReaderT Config (ExceptT String IO) ()
 echoBot updates = do
-  tokenValue <- asks (encodeUtf8 . token)
-  forM_ (PJ.result updates) (\update -> undefined)
+  forM_ (result updates) (echo . message)

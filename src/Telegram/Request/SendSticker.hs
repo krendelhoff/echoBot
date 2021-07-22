@@ -17,12 +17,3 @@ sendStickerRequest chat_id sticker token =
     token
     "sendSticker"
     [("chat_id", Just chat_id), ("sticker", Just sticker)]
-
-instance AttemptRequest Sticker where
-  tryPerformRequest _ _ Nothing                 = return ()
-  tryPerformRequest userid token (Just sticker) = echo userid token sticker
-
-instance EchoRequest Sticker where
-  echo userid token sticker =
-    performEchoRequest $
-    sendStickerRequest userid (encodeUtf8 . file_id $ sticker) token

@@ -18,13 +18,10 @@ bot :: IORef Int -> ReaderT Config (ExceptT String IO) ()
 bot lastOffset = do
   offsetValue <- liftIO $ readIORef lastOffset
   updatesJSON <- getUpdates offsetValue
-  -- debug
-  liftIO $ BC.appendFile "updates.json" updatesJSON
+  liftIO $ print updatesJSON
   updates <- lift $ parseUpdatesJSON updatesJSON
-  -- debug
-  liftIO $ BC.appendFile "updates.hajson" $ BC.pack $ show updates
+  liftIO $ print updates
   liftIO $ writeIORef lastOffset (refreshOffset updates offsetValue)
-  echoBot updates
 
 main :: IO ()
 main = do
