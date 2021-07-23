@@ -1,6 +1,7 @@
 token: 1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU
 timeout: 1
 repeat: 2
+repeatQuestion: Current repeat value 
 help: You're my frien now :>
 logMode: ALL
 messager: telegram

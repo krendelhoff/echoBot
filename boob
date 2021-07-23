@@ -1,0 +1,5 @@
+      where getter (config, map) =
+              ( encodeUtf8 $ repeatQuestion $ config
+              , BC.pack $
+                show $
+                maybe (repeat $ config) id $ M.lookup (PJ.id $ PJ.chat $ m) map)

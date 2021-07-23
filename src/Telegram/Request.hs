@@ -59,9 +59,8 @@ performEchoRequest request userId = tryPerformEchoRequest `catchError` logError
           "Big problem marked by the " <> show code <> " code doing echo"
 
 performCommandRequest ::
-     Request -> Int -> StateT (Config, Map Int Int) (ExceptT String IO) ()
-performCommandRequest request userId =
-  tryPerformCommandRequest `catchError` logError
+     Request -> StateT (Config, Map Int Int) (ExceptT String IO) ()
+performCommandRequest request = tryPerformCommandRequest `catchError` logError
   where
     tryPerformCommandRequest = do
       requestAction

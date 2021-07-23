@@ -13,11 +13,12 @@ import           Telegram.Log
 
 data Config =
   Config
-    { token   :: Text
-    , timeout :: Int
-    , logMode :: LogLevel
-    , repeat  :: Int
-    , help    :: Text
+    { token          :: Text
+    , timeout        :: Int
+    , logMode        :: LogLevel
+    , repeat         :: Int
+    , repeatQuestion :: Text
+    , help           :: Text
     }
   deriving (Show, Generic)
 

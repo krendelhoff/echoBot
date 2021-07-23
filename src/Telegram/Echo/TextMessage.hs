@@ -13,6 +13,7 @@ import           Data.Text.Encoding           (encodeUtf8)
 import           Prelude                      hiding (repeat)
 
 import           Telegram.Configuration
+import           Telegram.Echo.Repeat
 import           Telegram.Log
 import           Telegram.Log.Success
 import qualified Telegram.ParseJSON           as PJ
@@ -28,19 +29,14 @@ processTextMessage m = do
     "/help" -> do
       helpText <- gets getter
       processCommand userId helpText m
+      logCommandSuccess "/help"
       where getter (config, _) = encodeUtf8 $ help $ config
     "/repeat" -> do
-      rpeat <- gets getter
-      processCommand userId "chosen some repeats" m
-      where getter (config, map) =
-              maybe (accessor $ config) id $ M.lookup (PJ.id $ PJ.chat $ m) map
-              where
-                accessor = repeat :: Config -> Int
+      performRepeatChange m
+      logCommandSuccess "/repeat"
     _ -> do
       echoTextMessage userId text m
-      lvl <- gets getter
-      when (lvl >= ALL) (logSuccess "text" m)
-      where getter (config, _) = logMode config
+      logSuccess "text" m
 
 echoTextMessage ::
      BC.ByteString
@@ -60,8 +56,6 @@ processCommand ::
   -> StateT (Config, Map Int Int) (ExceptT String IO) ()
 processCommand userId text m = do
   tokn <- gets getter
-  performCommandRequest
-    (sendMessageRequest userId text tokn)
-    (PJ.id $ PJ.chat $ m)
+  performCommandRequest (sendMessageRequest userId text tokn)
   where
     getter (config, _) = encodeUtf8 $ token $ config
