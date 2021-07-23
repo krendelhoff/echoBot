@@ -19,6 +19,8 @@ echoSticker m = do
       takeFileId = PJ.file_id :: PJ.Sticker -> Text
       file_id = encodeUtf8 $ takeFileId $ PJ.sticker $ m
   tokn <- gets getter
-  performEchoRequest $ sendStickerRequest userId file_id tokn
+  performEchoRequest
+    (sendStickerRequest userId file_id tokn)
+    (PJ.id $ PJ.chat $ m)
   where
     getter (config, _) = encodeUtf8 $ token $ config

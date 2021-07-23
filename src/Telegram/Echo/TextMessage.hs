@@ -25,23 +25,37 @@ processTextMessage m = do
   case PJ.text m of
     "/help" -> do
       helpText <- gets getter
-      echoTextMessage userId helpText
+      processCommand userId helpText m
       where getter (config, _) = encodeUtf8 $ help $ config
     "/repeat" -> do
       rpeat <- gets getter
-      echoTextMessage userId ("chosen some repeats")
+      processCommand userId "chosen some repeats" m
       where getter (config, map) =
-              maybe (accessor $ config) id $ M.lookup map $ PJ.id $ PJ.chat m
+              maybe (accessor $ config) id $ M.lookup (PJ.id $ PJ.chat $ m) map
               where
                 accessor = repeat :: Config -> Int
-    _ -> echoTextMessage userId text
+    _ -> echoTextMessage userId text m
 
 echoTextMessage ::
      BC.ByteString
   -> BC.ByteString
+  -> PJ.Message
   -> StateT (Config, Map Int Int) (ExceptT String IO) ()
-echoTextMessage userId text = do
+echoTextMessage userId text m = do
   tokn <- gets getter
-  performEchoRequest $ sendMessageRequest userId text tokn
+  performEchoRequest (sendMessageRequest userId text tokn) (PJ.id $ PJ.chat $ m)
+  where
+    getter (config, _) = encodeUtf8 $ token $ config
+
+processCommand ::
+     BC.ByteString
+  -> BC.ByteString
+  -> PJ.Message
+  -> StateT (Config, Map Int Int) (ExceptT String IO) ()
+processCommand userId text m = do
+  tokn <- gets getter
+  performCommandRequest
+    (sendMessageRequest userId text tokn)
+    (PJ.id $ PJ.chat $ m)
   where
     getter (config, _) = encodeUtf8 $ token $ config

@@ -22,6 +22,8 @@ echoPhotoMessage m = do
         encodeUtf8 $ takeFileId $ head $ PJ.photo $ m -- FIXME Non-total function
       captn = encodeUtf8 <$> PJ.caption m
   tokn <- gets getter
-  performEchoRequest $ sendPhotoRequest userId fileId captn tokn
+  performEchoRequest
+    (sendPhotoRequest userId fileId captn tokn)
+    (PJ.id $ PJ.chat m)
   where
     getter (config, _) = encodeUtf8 $ token $ config
