@@ -11,6 +11,7 @@ import           Network.HTTP.Simple
 
 import           Telegram.Configuration
 import           Telegram.Log
+import           Telegram.Log.Error
 import           Telegram.Request
 
 getUpdatesRequest :: BC.ByteString -> BC.ByteString -> BC.ByteString -> Request
@@ -35,6 +36,3 @@ getUpdates offst = tryGetUpdates `catchError` logError
       where
         getter (config, _) =
           (encodeUtf8 $ token config, BC.pack $ show $ timeout config)
-    logError err = do
-      liftIO $ writeLog ERROR $ err
-      throwError err

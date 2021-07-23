@@ -57,9 +57,6 @@ performEchoRequest request userId = tryPerformEchoRequest `catchError` logError
         code ->
           throwError $
           "Big problem marked by the " <> show code <> " code doing echo"
-    logError err = do
-      liftIO $ writeLog ERROR err
-      throwError err
 
 performCommandRequest ::
      Request -> Int -> StateT (Config, Map Int Int) (ExceptT String IO) ()

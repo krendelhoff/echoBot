@@ -13,6 +13,8 @@ import           Data.Text.Encoding           (encodeUtf8)
 import           Prelude                      hiding (repeat)
 
 import           Telegram.Configuration
+import           Telegram.Log
+import           Telegram.Log.Success
 import qualified Telegram.ParseJSON           as PJ
 import           Telegram.Request
 import           Telegram.Request.SendMessage
@@ -34,7 +36,11 @@ processTextMessage m = do
               maybe (accessor $ config) id $ M.lookup (PJ.id $ PJ.chat $ m) map
               where
                 accessor = repeat :: Config -> Int
-    _ -> echoTextMessage userId text m
+    _ -> do
+      echoTextMessage userId text m
+      lvl <- gets getter
+      when (lvl >= ALL) (logSuccess "text" m)
+      where getter (config, _) = logMode config
 
 echoTextMessage ::
      BC.ByteString
