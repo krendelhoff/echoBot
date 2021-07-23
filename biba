@@ -1,0 +1,4 @@
+  (lvl,rep) <- gets getter
+  when (lvl >= ALL) (liftIO $ writeLog ALL "Successfully echoed photo " <> 
+    where getter (config,map) = (logMode config, rep)
+          where rep = maybe (repeat $ config) id (

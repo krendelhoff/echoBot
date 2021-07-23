@@ -18,6 +18,7 @@ import           Prelude                hiding (repeat)
 
 import           Telegram.Configuration
 import           Telegram.Log
+import           Telegram.Log.Error
 import qualified Telegram.ParseJSON     as PJ
 
 type HTTPMethod = BC.ByteString
@@ -74,6 +75,3 @@ performCommandRequest request userId =
         code ->
           throwError $
           "Big problem marked by the " <> show code <> " code doing command"
-    logError err = do
-      liftIO $ writeLog ERROR err
-      throwError err
