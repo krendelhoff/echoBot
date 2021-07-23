@@ -3,7 +3,8 @@ module Telegram.Echo.Sticker
   ) where
 
 import           Control.Monad.Except
-import           Control.Monad.Reader
+import           Control.Monad.State
+import           Data.Map                     (Map)
 import           Data.Text                    (Text, pack)
 import           Data.Text.Encoding           (encodeUtf8)
 
@@ -12,10 +13,12 @@ import qualified Telegram.ParseJSON           as PJ
 import           Telegram.Request
 import           Telegram.Request.SendSticker
 
-echoSticker :: PJ.Message -> ReaderT Config (ExceptT String IO) ()
+echoSticker :: PJ.Message -> StateT (Config, Map Int Int) (ExceptT String IO) ()
 echoSticker m = do
   let userId = encodeUtf8 $ pack $ show $ PJ.id $ PJ.chat m
       takeFileId = PJ.file_id :: PJ.Sticker -> Text
       file_id = encodeUtf8 $ takeFileId $ PJ.sticker $ m
-  tokn <- asks (encodeUtf8 . token)
-  lift $ performEchoRequest $ sendStickerRequest userId file_id tokn
+  tokn <- gets getter
+  performEchoRequest $ sendStickerRequest userId file_id tokn
+  where
+    getter (config, _) = encodeUtf8 $ token $ config

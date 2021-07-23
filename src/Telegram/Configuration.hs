@@ -5,14 +5,19 @@ module Telegram.Configuration
 
 import           Control.Monad.Except
 import qualified Data.ByteString      as B
-import qualified Data.Text            as T
+import           Data.Text            (Text)
 import           Data.Yaml
 import           GHC.Generics
 
+import           Telegram.Log
+
 data Config =
   Config
-    { token   :: T.Text
+    { token   :: Text
     , timeout :: Int
+    , logMode :: LogLevel
+    , repeat  :: Int
+    , help    :: Text
     }
   deriving (Show, Generic)
 

@@ -1,7 +1,7 @@
 module Main where
 
 import           Control.Monad.Except
-import           Control.Monad.StateT
+import           Control.Monad.State
 import qualified Data.ByteString.Char8       as BC
 import           Data.IORef
 import           Data.Map                    (Map)
@@ -19,7 +19,7 @@ refreshOffset updates _ = succ . update_id . last . result $ updates
 bot :: IORef Int -> StateT (Config, Map Int Int) (ExceptT String IO) ()
 bot lastOffset = do
   offsetValue <- liftIO $ readIORef lastOffset
-  updatesJSON <- getUpdates offsetValue
+  updatesJSON <- getUpdates (BC.pack $ show $ offsetValue)
   updates <- lift $ parseUpdatesJSON updatesJSON
   liftIO $ writeIORef lastOffset (refreshOffset updates offsetValue)
   echoBot updates

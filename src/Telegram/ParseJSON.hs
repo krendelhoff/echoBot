@@ -16,6 +16,8 @@ import           Data.Text             (Text)
 import qualified Data.Text             as T
 import           GHC.Generics
 
+import           Telegram.Log
+
 data Updates =
   Updates
     { ok     :: Bool
@@ -86,8 +88,13 @@ instance FromJSON Sticker
 -- непонятно зачем тут IO вообще присобачено к чистому коду, но пока не знаю
 -- как избавиться
 parseUpdatesJSON :: BC.ByteString -> ExceptT String IO Updates
-parseUpdatesJSON updatesJSON = do
-  either
-    throwError
-    return
-    (eitherDecodeStrict updatesJSON :: Either String Updates)
+parseUpdatesJSON updatesJSON = tryParse `catchError` logError
+  where
+    tryParse = do
+      either
+        throwError
+        return
+        (eitherDecodeStrict updatesJSON :: Either String Updates)
+    logError err = do
+      liftIO $ writeLog ERROR err
+      throwError err

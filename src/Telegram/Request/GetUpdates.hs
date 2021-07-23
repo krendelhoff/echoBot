@@ -3,12 +3,14 @@ module Telegram.Request.GetUpdates
   ) where
 
 import           Control.Monad.Except
-import           Control.Monad.Reader
+import           Control.Monad.State
 import qualified Data.ByteString.Char8  as BC
+import           Data.Map               (Map)
 import           Data.Text.Encoding     (encodeUtf8)
 import           Network.HTTP.Simple
 
 import           Telegram.Configuration
+import           Telegram.Log
 import           Telegram.Request
 
 getUpdatesRequest :: BC.ByteString -> BC.ByteString -> BC.ByteString -> Request
@@ -19,20 +21,20 @@ getUpdatesRequest offset token timeout =
     "getUpdates"
     [("timeout", Just timeout), ("offset", Just offset)]
 
-intToByteString :: Int -> BC.ByteString
-intToByteString = BC.pack . show
-
-getUpdates :: Int -> ReaderT Config (ExceptT String IO) BC.ByteString
-getUpdates offsetValue = do
-  config <- ask
-  response <-
-    liftIO $
-    httpBS $
-    getUpdatesRequest
-      (intToByteString offsetValue)
-      (encodeUtf8 . token $ config)
-      (intToByteString $ timeout config)
-  case getResponseStatusCode response of
-    200 -> do
-      return (getResponseBody response)
-    code -> throwError $ "Request failed with " <> show code <> " code"
+getUpdates ::
+     BC.ByteString
+  -> StateT (Config, Map Int Int) (ExceptT String IO) BC.ByteString
+getUpdates offst = tryGetUpdates `catchError` logError
+  where
+    tryGetUpdates = do
+      (tokn, timeut) <- gets getter
+      response <- liftIO $ httpBS $ getUpdatesRequest offst tokn timeut
+      case getResponseStatusCode response of
+        200  -> return (getResponseBody response)
+        code -> throwError $ "Request failed with " <> show code <> " code"
+      where
+        getter (config, _) =
+          (encodeUtf8 $ token config, BC.pack $ show $ timeout config)
+    logError err = do
+      liftIO $ writeLog ERROR $ err
+      throwError err
