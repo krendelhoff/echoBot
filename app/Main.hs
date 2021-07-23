@@ -20,6 +20,7 @@ bot :: IORef Int -> StateT (Config, Map Int Int) (ExceptT String IO) ()
 bot lastOffset = do
   offsetValue <- liftIO $ readIORef lastOffset
   updatesJSON <- getUpdates (BC.pack $ show $ offsetValue)
+  liftIO $ BC.appendFile "updates.json" updatesJSON
   updates <- lift $ parseUpdatesJSON updatesJSON
   liftIO $ writeIORef lastOffset (refreshOffset updates offsetValue)
   echoBot updates
