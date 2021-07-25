@@ -1,6 +1,8 @@
 token: 1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU
 timeout: 5
 repeat: 2
+debugJSONlog: updates.json
+logFile: log.txt
 repeatQuestion: Current repeat value 
 help: You're my frien now :>
 logMode: ALL
