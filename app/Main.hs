@@ -1,38 +1,51 @@
 module Main where
 
 import           Control.Monad.Except
+import           Control.Monad.Reader
 import           Control.Monad.State
-import qualified Data.ByteString.Char8       as BC
+import           Control.Monad.Trans
+import qualified Data.ByteString.Char8  as BC
 import           Data.IORef
-import           Data.Map                    (Map)
-import qualified Data.Map                    as M
+import           Data.Map               (Map)
+import qualified Data.Map               as M
 
 import           Telegram.Configuration
-import           Telegram.Echo
 import           Telegram.ParseJSON
-import           Telegram.Request.GetUpdates
 
 refreshOffset :: Updates -> Int -> Int
 refreshOffset (Updates {result = []}) offsetValue = offsetValue
 refreshOffset updates _ = succ . update_id . last . result $ updates
 
-bot :: IORef Int -> StateT (Config, Map Int Int) (ExceptT String IO) ()
-bot lastOffset = do
-  offsetValue <- liftIO $ readIORef lastOffset
-  updatesJSON <- getUpdates (BC.pack $ show $ offsetValue)
-  liftIO $ BC.appendFile "updates.json" updatesJSON
-  updates <- lift $ parseUpdatesJSON updatesJSON
-  liftIO $ writeIORef lastOffset (refreshOffset updates offsetValue)
-  echoBot updates
+runBot config bot = runReaderT (runStateT (runExceptT bot) M.empty) config
+
+-- короче, никакой runBot и вообще forever в main не сработает, т.к. постоянно надо обновлять состояние, а мы его ранботом теряем
+-- делать IO state не вариант, надо чисто реализовывать
+-- думой, читай пока про Tagless Final
+-- надо уходить от IO и всё делать чистым
+-- т.е. формировтаь запрос, узнавать сколько раз его отправить, всё это делать чисто
+-- и только в самом конце кидать IO
+bot ::
+     ( MonadReader Config m
+     , MonadState UserRepeat m
+     , MonadIO m
+     , MonadError String m
+     )
+  => IORef Int
+  -> m ()
+bot offset = do
+  offst <- liftIO $ readIORef offset
+  liftIO $ writeIORef offset (refreshOffset undefined offst)
+  return ()
 
 main :: IO ()
 main = do
   lastOffset <- newIORef 0
   eitherConfig <- runExceptT parseConfig
   either
-    putStrLn
+    putStrLn -- debug print-logging
     (\config -> do
        forever $ do
-         res <- runExceptT $ runStateT (bot lastOffset) (config, M.empty)
-         either putStrLn (const $ return ()) res)
+         res <- runBot config bot
+         either putStrLn (const $ return ()) res -- debug print-logging
+     )
     eitherConfig
