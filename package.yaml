@@ -20,7 +20,9 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/krendelhoff/echoBot#readme>
 
 dependencies:
-- base >= 4.7 && < 5
+- name: base
+  version: ">= 4.7 && < 5"
+  mixin: hiding (Prelude)
 - http-conduit
 - aeson
 - yaml
@@ -28,14 +30,17 @@ dependencies:
 - text
 - containers
 - mtl
-
+- name: relude
+  mixin: 
+    - (Relude as Prelude)
+    - hiding ()
 
 library:
   source-dirs: src
   default-extensions:
   - OverloadedStrings
   - DeriveGeneric
-  
+
 executables:
   echoBot-exe:
     main:                Main.hs
