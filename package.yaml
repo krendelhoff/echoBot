@@ -35,11 +35,16 @@ dependencies:
     - (Relude as Prelude)
     - hiding ()
 
+default-extensions:
+- OverloadedStrings
+- DeriveGeneric
+- DuplicateRecordFields
+- FlexibleInstances
+- FlexibleContexts
+- RecordWildCards
+
 library:
   source-dirs: src
-  default-extensions:
-  - OverloadedStrings
-  - DeriveGeneric
 
 executables:
   echoBot-exe:
@@ -49,12 +54,6 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    default-extensions:
-    - OverloadedStrings
-    - DeriveGeneric
-    - DuplicateRecordFields
-    - FlexibleInstances
-    - FlexibleContexts
     dependencies:
     - echoBot
 

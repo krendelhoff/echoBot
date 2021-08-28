@@ -1,9 +1,13 @@
+# HTTP config
 token: 1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU
 timeout: 5
-repeat: 2
-debug_JSONLogFile: updates.json
-logFile: log.txt
-repeatQuestion: Current repeat value 
+
+# Logger config
+mode: Both
+priority: Info
+file: log.txt
+
+# Bot config
+repeatQuestion: Current repeat value
 help: You're my frien now :>
-logMode: ALL
-messager: tg # tg or vk
+defaultRepeat: 1

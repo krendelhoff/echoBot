@@ -6,7 +6,7 @@ import qualified System.IO (Handle)
 -- пока что абсолютно независимый логгер делаем
 data Handle =
   Handle
-    { log :: Text -> IO ()
+    { log :: Priority -> Text -> IO ()
     }
 
 -- так, судя по всему - это интерфейсный файл
