@@ -5,18 +5,21 @@ module Logger.Display
   , new
   , close
   , withHandle
-  , newIHandle
-  , closeIHandle
-  , withIHandle
   , log
   ) where
 
 import           Control.Exception (bracket)
+import           Data.Aeson        (FromJSON)
+import qualified Data.ByteString   as BS
 import           Data.Foldable     (traverse_)
 import           Data.Text         (Text, pack)
 import qualified Data.Text.IO      as TIO (hPutStrLn)
+import           Data.Yaml         (decodeThrow)
+import           GHC.Generics
 import           Logger            (Mode (..))
 import qualified Logger
+-- всегда указывай четко квалифайд, и какие функции импортируешь
+import           Relude
 import           System.IO         (IOMode (AppendMode), hClose, openFile,
                                     stdout)
 import qualified System.IO         as SIO (Handle)
@@ -33,11 +36,13 @@ data Config =
     , mode     :: Logger.Mode
     , file     :: FilePath
     }
+  deriving (Eq, Show, Generic)
 
-parseLoggerC :: IO Config
-parseLoggerC = undefined
+instance FromJSON Config
 
--- вот это всё можно засунуть в "сервис", отвечающий именно за открытие потоков/файлов и сделать логгер зависимым от него
+parseConfig :: IO Config
+parseConfig = BS.readFile "config.yaml" >>= decodeThrow
+
 newIHandle :: Config -> IO IHandle
 newIHandle c@Config {..} =
   case mode of
@@ -62,8 +67,9 @@ new _ ih = return $ Logger.Handle {Logger.log = log ih}
 close :: Logger.Handle -> IO ()
 close _ = return ()
 
-withHandle :: Config -> IHandle -> (Logger.Handle -> IO a) -> IO a
-withHandle config ih f = bracket (new config ih) close f
+withHandle :: Config -> (Logger.Handle -> IO a) -> IO a
+withHandle config f =
+  withIHandle config $ \ih -> bracket (new config ih) close f
 
 log :: IHandle -> Logger.Priority -> Text -> IO ()
 log IHandle {..} prior txt

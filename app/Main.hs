@@ -3,15 +3,14 @@ module Main where
 import           Logger         (Mode (..), Priority (..), log)
 import qualified Logger
 import qualified Logger.Display
+import           Relude
 import qualified System.IO      as SIO
 
 main :: IO ()
 main = do
-  let myConfig =
-        Logger.Display.Config {mode = Both, priority = Info, file = "log.txt"}
-  Logger.Display.withIHandle myConfig $ \ih -> do
-    Logger.Display.withHandle myConfig ih $ \hLogger -> do
-      log hLogger Warn "biba - boba!!!!!!!!!!!!!!"
+  myConfig <- Logger.Display.parseConfig
+  Logger.Display.withHandle myConfig $ \hLogger -> do
+    log hLogger Error "You are too best!"
 -- TODO withHandle должен реализовывать функционал такой, что должен закрываться и handle (файловый)
 -- логгер реализован
 -- закрывай отдельно

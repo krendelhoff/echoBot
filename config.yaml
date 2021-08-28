@@ -8,6 +8,6 @@ priority: Info
 file: log.txt
 
 # Bot config
-repeatQuestion: Current repeat value
+question: Current repeat value
 help: You're my frien now :>
-defaultRepeat: 1
+repeat: 1

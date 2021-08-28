@@ -10,19 +10,10 @@ extra-source-files:
 - README.md
 - ChangeLog.md
 
-# Metadata used when publishing your package
-# synopsis:            Short description of your package
-# category:            Web
-
-# To avoid duplicated efforts in documentation and dealing with the
-# complications of embedding Haddock markup inside cabal files, it is
-# common to point users to the README.md file.
 description:         Please see the README on GitHub at <https://github.com/krendelhoff/echoBot#readme>
 
 dependencies:
-- name: base
-  version: ">= 4.7 && < 5"
-  mixin: hiding (Prelude)
+- base >= 4.7 && < 5
 - http-conduit
 - aeson
 - yaml
@@ -30,10 +21,8 @@ dependencies:
 - text
 - containers
 - mtl
-- name: relude
-  mixin: 
-    - (Relude as Prelude)
-    - hiding ()
+- relude
+- exceptions
 
 default-extensions:
 - OverloadedStrings
@@ -42,6 +31,7 @@ default-extensions:
 - FlexibleInstances
 - FlexibleContexts
 - RecordWildCards
+- NoImplicitPrelude
 
 library:
   source-dirs: src
