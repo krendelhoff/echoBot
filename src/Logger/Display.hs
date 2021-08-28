@@ -8,21 +8,20 @@ module Logger.Display
   , log
   ) where
 
-import           Control.Exception (bracket)
-import           Data.Aeson        (FromJSON)
-import qualified Data.ByteString   as BS
-import           Data.Foldable     (traverse_)
-import           Data.Text         (Text, pack)
-import qualified Data.Text.IO      as TIO (hPutStrLn)
-import           Data.Yaml         (decodeThrow)
+import           Control.Exception     (bracket)
+import           Data.Aeson            (FromJSON)
+import           Data.ByteString.Char8 (ByteString)
+import           Data.Foldable         (traverse_)
+import           Data.Text             (Text, pack)
+import qualified Data.Text.IO          as TIO (hPutStrLn)
+import           Data.Yaml             (decodeThrow)
 import           GHC.Generics
-import           Logger            (Mode (..))
+import           Logger                (Mode (..))
 import qualified Logger
--- всегда указывай четко квалифайд, и какие функции импортируешь
 import           Relude
-import           System.IO         (IOMode (AppendMode), hClose, openFile,
-                                    stdout)
-import qualified System.IO         as SIO (Handle)
+import           System.IO             (IOMode (AppendMode), hClose, openFile,
+                                        stdout)
+import qualified System.IO             as SIO (Handle)
 
 data IHandle =
   IHandle
@@ -40,8 +39,8 @@ data Config =
 
 instance FromJSON Config
 
-parseConfig :: IO Config
-parseConfig = BS.readFile "config.yaml" >>= decodeThrow
+parseConfig :: ByteString -> IO Config
+parseConfig = decodeThrow
 
 newIHandle :: Config -> IO IHandle
 newIHandle c@Config {..} =
@@ -67,6 +66,10 @@ new _ ih = return $ Logger.Handle {Logger.log = log ih}
 close :: Logger.Handle -> IO ()
 close _ = return ()
 
+-- в этом и есть глубинная суть судя по всему - implemetation Handle inside interface Handle
+-- имплементацию прячем в интерфейсные функции, очень логично
+-- это стало очевидно, когда я вызвал withIHandle myConfig $ \ih ->
+--                                  withHandle myConfig ih $ \hLogger -> ..
 withHandle :: Config -> (Logger.Handle -> IO a) -> IO a
 withHandle config f =
   withIHandle config $ \ih -> bracket (new config ih) close f

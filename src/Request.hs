@@ -1,6 +1,8 @@
 module Request
   ( parseConfig
   , create
+  , getUpdates
+  , Handle(..)
   ) where
 
 import           Control.Exception     hiding (catch)
@@ -48,10 +50,11 @@ data Handle =
 data RequestError
   = Code Int
   | Dirty Text
+  deriving (Show)
 
 -- здесь не нужно париться, исключение этого вырубает программу
-parseConfig :: IO Config
-parseConfig = BC.readFile "config.yaml" >>= decodeThrow
+parseConfig :: ByteString -> IO Config
+parseConfig = decodeThrow
 
 type Method = ByteString
 
@@ -69,6 +72,7 @@ create token method qs =
 
 -- если тут мы получили любое исключение, программа жива и просто идет на следующую итерацию
 -- качественный код!!!
+-- TODO как тестировать эту функцию?
 getUpdates ::
      (MonadCatch m, MonadError RequestError m, MonadIO m)
   => Handle
@@ -76,8 +80,8 @@ getUpdates ::
 getUpdates Handle {..} =
   (do offsetValue <- readIORef offsetRef
       let queryOffset = pack . show $ offsetValue
-          req =
-            create (token config) "/getUpdates" [("offset", Just queryOffset)]
+          req = "google.com"
+           -- create (token config) "/getUpdates" [("offset", Just queryOffset)]
       response <- liftIO $ httpBS req
       case getResponseStatusCode response of
         200 -> do
@@ -88,6 +92,6 @@ getUpdates Handle {..} =
           liftIO $ log hLogger Error errorMsg
           throwError $ Code x) `catch`
   (\exception -> do
-     let errorMsg = T.pack $ show $ exception
+     let errorMsg = T.pack $ show $ (exception :: SomeException)
      liftIO $ log hLogger Error errorMsg
      throwError $ Dirty errorMsg)

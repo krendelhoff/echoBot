@@ -10,12 +10,12 @@ import           GHC.Generics
 import           Relude       hiding (Handle)
 import qualified System.IO    (Handle)
 
--- пока что абсолютно независимый логгер делаем
 data Handle =
   Handle
     { log :: Priority -> Text -> IO ()
     }
 
+-- может быть сервис может иметь независимый от реализации конфиг, тогда можно попробовать прикрутить его сюда, в интерфейс, но в целом не нужно, как в случае с нашим логгером
 -- так, судя по всему - это интерфейсный файл
 data Mode
   = Stdout
