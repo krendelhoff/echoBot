@@ -23,7 +23,6 @@ dependencies:
 - mtl
 - relude
 - exceptions
-- case-insensitive
 
 default-extensions:
 - OverloadedStrings
@@ -33,6 +32,7 @@ default-extensions:
 - FlexibleContexts
 - RecordWildCards
 - NoImplicitPrelude
+- RankNTypes
 
 library:
   source-dirs: src

@@ -3,7 +3,7 @@ token: 1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU
 timeout: 5
 
 # Logger config
-mode: Both
+mode: File
 priority: Info
 file: log.txt
 
