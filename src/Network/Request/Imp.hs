@@ -1,4 +1,4 @@
-module Request.Imp
+module Network.Request.Imp
   ( Handle
   , newHandle
   , closeHandle
@@ -30,7 +30,7 @@ import           Logger                (Priority (..), log)
 import qualified Logger
 import qualified Logger.Display
 import           Miscellanea
-import qualified Request
+import qualified Network.Request       as Request
 
 -- implementation Handle
 data Handle =

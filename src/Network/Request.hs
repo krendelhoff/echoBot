@@ -1,4 +1,4 @@
-module Request
+module Network.Request
   ( Handle(..)
   , Config(..)
   , Info(..)
