@@ -8,20 +8,22 @@ module Logger.Display
   , log
   ) where
 
-import           Control.Exception     (bracket)
+import           Control.Monad.Catch
 import           Data.Aeson            (FromJSON)
 import           Data.ByteString.Char8 (ByteString)
 import           Data.Foldable         (traverse_)
 import           Data.Text             (Text, pack)
-import qualified Data.Text.IO          as TIO (hPutStrLn)
+import qualified Data.Text.IO          as TIO (hPutStrLn, putStrLn)
 import           Data.Yaml             (decodeThrow)
 import           GHC.Generics
-import           Logger                (Mode (..))
-import qualified Logger
 import           Relude
 import           System.IO             (IOMode (AppendMode), hClose, openFile,
                                         stdout)
 import qualified System.IO             as SIO (Handle)
+
+import           Logger                (Mode (..))
+import qualified Logger
+import           Miscellanea
 
 data IHandle =
   IHandle
@@ -40,7 +42,14 @@ data Config =
 instance FromJSON Config
 
 parseConfig :: ByteString -> IO Config
-parseConfig = decodeThrow
+parseConfig rawData =
+  decodeThrow rawData `catch`
+  (\exception -> do
+     let errorMsg = showText (exception :: SomeException)
+     -- может стоит написать функцию переводящую в текст
+     TIO.putStrLn errorMsg
+     TIO.putStrLn "Fatal Error: Logger config no parse"
+     exitFailure)
 
 newIHandle :: Config -> IO IHandle
 newIHandle c@Config {..} =
@@ -80,5 +89,5 @@ log IHandle {..} prior txt
     traverse_ ((flip TIO.hPutStrLn) logMsg) handles
   | otherwise = return ()
   where
-    logMsg = (pack . show) prior <> ": " <> txt
+    logMsg = showText prior <> ": " <> txt
     -- ^ better to use fmt, but i can't cause packet restriction

@@ -23,6 +23,7 @@ dependencies:
 - mtl
 - relude
 - exceptions
+- case-insensitive
 
 default-extensions:
 - OverloadedStrings
