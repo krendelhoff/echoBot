@@ -38,7 +38,6 @@ data Error
   | Exception Text
   deriving (Show)
 
--- здесь не нужно париться, исключение этого вырубает программу
 parseConfig :: ByteString -> IO Config
 parseConfig rawData =
   decodeThrow rawData `catch`

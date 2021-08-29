@@ -68,6 +68,7 @@ bot = do
       case result of
         Left _        -> return ()
         Right updates -> print updates
+        -- copyMessage
 
 readConfig =
   BC.readFile "config.yaml" `catch`
