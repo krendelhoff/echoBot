@@ -26,6 +26,7 @@ import           Network.HTTP.Conduit  (path)
 import           Network.HTTP.Simple
 import           Relude                hiding (Handle, log)
 
+import qualified Data.Request
 import           Logger                (Priority (..), log)
 import qualified Logger
 import qualified Logger.Display
@@ -37,17 +38,21 @@ data Handle =
   Handle
     { config  :: Request.Config
     , hLogger :: Logger.Handle
-    , info    :: Request.Info
+    , info    :: Data.Request.Info
     }
 
-newHandle :: Request.Config -> Logger.Handle -> Request.Info -> IO Handle
+newHandle :: Request.Config -> Logger.Handle -> Data.Request.Info -> IO Handle
 newHandle config hLogger = return . Handle config hLogger
 
 closeHandle :: Handle -> IO ()
 closeHandle _ = return ()
 
 withIHandle ::
-     Request.Config -> Logger.Handle -> Request.Info -> (Handle -> IO a) -> IO a
+     Request.Config
+  -> Logger.Handle
+  -> Data.Request.Info
+  -> (Handle -> IO a)
+  -> IO a
 withIHandle config hLogger reqInfo =
   bracket (newHandle config hLogger reqInfo) closeHandle
 
@@ -61,7 +66,7 @@ close _ = return ()
 withHandle ::
      Request.Config
   -> Logger.Handle
-  -> Request.Info
+  -> Data.Request.Info
   -> (Request.Handle -> IO a)
   -> IO a
 withHandle config hLogger reqInfo f =
@@ -72,15 +77,15 @@ perform ::
   => Handle
   -> m ByteString
 perform Handle {..} =
-  (do let req = Request.create config info
+  (do let req = Data.Request.create config info
       response <- liftIO $ httpBS req
       case getResponseStatusCode response of
         200 -> do
-          let method = decodeUtf8 $ Request.method info
+          let method = decodeUtf8 $ Data.Request.method info
           liftIO $ log hLogger Info (method <> " request made successfully")
           return $ getResponseBody response
         x -> do
-          let errorMsg = showText x
+          let errorMsg = "Request failed with the " <> showText x <> " code"
           liftIO $ log hLogger Error errorMsg
           throwError $ Request.Code x) `catch`
   (\exception -> do

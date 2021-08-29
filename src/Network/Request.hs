@@ -1,10 +1,8 @@
 module Network.Request
   ( Handle(..)
   , Config(..)
-  , Info(..)
   , Error(..)
   , parseConfig
-  , create
   ) where
 
 import           Control.Monad
@@ -49,24 +47,3 @@ parseConfig rawData =
      TIO.putStrLn errorMsg
      TIO.putStrLn "Fatal Error: Request Config no parse"
      exitFailure)
-
-type Method = ByteString
-
-type Token = Text
-
-create :: Config -> Info -> Request
-create Config {..} Info {..} =
-  setRequestPath path $
-  setRequestMethod "GET" $
-  setRequestHost "api.telegram.org" $
-  setRequestQueryString qStr $
-  setRequestPort 443 $ setRequestSecure True $ defaultRequest
-  where
-    path = "/bot" <> encodeUtf8 token <> "/" <> method
-
-data Info =
-  Info
-    { method :: Method
-    , qStr   :: Query
-    }
-  deriving (Show)
