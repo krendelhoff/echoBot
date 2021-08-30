@@ -1,5 +1,6 @@
 module Main where
 
+import qualified Data.ByteString.Char8 as BC
 import qualified Data.Request
 import           Logger                (Mode (..), Priority (..), log)
 import qualified Logger
@@ -67,7 +68,7 @@ bot = do
       result <- runExceptT $ Request.perform hRequest
       case result of
         Left _        -> return ()
-        Right updates -> print updates
+        Right updates -> BC.putStrLn updates
         -- copyMessage
 
 readConfig =

@@ -32,7 +32,9 @@ default-extensions:
 - FlexibleContexts
 - RecordWildCards
 - NoImplicitPrelude
-- RankNTypes
+- Rank2Types
+- DeriveAnyClass
+- StandaloneDeriving
 
 library:
   source-dirs: src
