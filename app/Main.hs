@@ -39,7 +39,8 @@ main = do
   offset <- newIORef 0
   repeatMap <- newIORef M.empty
   -- app begins
-  Logger.Display.withHandle cLogger $ \hLogger -> do
+  let withLogger = Logger.Display.withHandle cLogger
+  withLogger $ \hLogger -> do
     forever $
       runBot
         bot
