@@ -12,7 +12,7 @@ import qualified ParseJSON
 
 import           Control.Exception
 import           Control.Monad.Except
-import           Data.Aeson            (decodeStrict)
+import           Data.Aeson            (eitherDecodeStrict')
 import qualified Data.ByteString.Char8 as BC (readFile)
 import           Data.Either           (fromRight, isRight)
 import qualified Data.Map              as M
@@ -57,7 +57,9 @@ main = do
 bot :: (MonadIO m, MonadReader Env m) => m ()
 bot = do
   Env {..} <- ask
+  {-- READING MUTABLE STATE --}
   offset <- readIORef offsetRef
+  -----------------------------
   let getUpdates = Data.Request.getUpdates offset funcConfig
       makeRequest req =
         Request.Imp.withHandle
@@ -67,19 +69,32 @@ bot = do
           (runExceptT . Request.perform)
   result <- liftIO $ makeRequest getUpdates
   when (isRight result) $ do
-    let rawJSON = fromRight "" result
-        updatesMaybe = decodeStrict rawJSON
-    case updatesMaybe of
-      Nothing -> liftIO $ log hLogger Error "Got incorrect getUpdates JSON data"
-      Just ParseJSON.Updates {result = updates, ..} -> do
+    case updatesEither result of
+      Left err ->
+        liftIO $ log hLogger Error "Got incorrect getUpdates JSON data"
+      Right ParseJSON.Updates {result = updates, ..} -> do
         forM_ updates $ \ParseJSON.Update {..} -> do
           return ()
           {-- MUTATING STATE --}
           writeIORef offsetRef $ succ update_id
-          -----------------
+          ---------------------- -- вот с этого момента можно новое монадическое
+          --                        действие начать, апдейт как аргумент
+          --                        остальное с Reader
           let copyMessage = Data.Request.copyMessage id message_id
-          -- TODO проверку, что всё успешно
-          liftIO $ makeRequest copyMessage
+          case text of
+            Nothing -> do
+              liftIO $ makeRequest copyMessage -- TODO check
+            Just txt -> do
+              case txt of
+                "/help" -> do
+                  let helpMessage = Data.Request.helpMessage id funcConfig
+                  liftIO $ makeRequest helpMessage -- TODO check
+                "/repeat" -> do
+                  let repeatMessage = Data.Request.repeatMessage id funcConfig
+                  liftIO $ makeRequest repeatMessage
+                  -- TODO mutate RepeatMap
+                _ -> do
+                  liftIO $ makeRequest copyMessage -- TODO check
 
 readConfig =
   BC.readFile "config.yaml" `catch`
@@ -90,3 +105,7 @@ readConfig =
      exitFailure)
 
 runBot bot rdr = runReaderT (bot) rdr
+
+updatesEither result =
+  let rawJSON = fromRight "" result
+   in eitherDecodeStrict' rawJSON

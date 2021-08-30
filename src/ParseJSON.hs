@@ -28,12 +28,23 @@ data Update =
 
 instance FromJSON Update where
   parseJSON =
-    withObject "telegram update" $ \o -> do
-      update_id <- o .: "update_id"
-      messageO <- o .: "message"
-      text <- messageO .: "text"
-      message_id <- messageO .: "message_id"
-      chatO <- messageO .: "chat"
-      id <- chatO .: "id"
-      username <- chatO .: "username"
-      return $ Update {..}
+    withObject
+      "telegram update"
+      ((<|>) <$> updateParser <*> copyMessageCheckSuccessParser)
+    where
+      updateParser o = do
+        update_id <- o .: "update_id"
+        messageO <- o .: "message"
+        text <- optional $ messageO .: "text"
+        message_id <- messageO .: "message_id"
+        chatO <- messageO .: "chat"
+        id <- chatO .: "id"
+        username <- chatO .: "username"
+        return $ Update {..}
+      copyMessageCheckSuccessParser o = do
+        let update_id = 0
+            id = 0
+            username = ""
+            text = Nothing
+        message_id <- o .: "message_id"
+        return $ Update {..}

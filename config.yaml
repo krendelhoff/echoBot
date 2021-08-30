@@ -3,8 +3,8 @@ token: 1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU
 timeout: 40
 
 # Logger config
-mode: File
-priority: Error
+mode: Stdout
+priority: Info
 file: log.txt
 
 # Bot config

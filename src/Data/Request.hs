@@ -7,10 +7,12 @@ module Data.Request
   , Config(..)
   , parseConfig
   , copyMessage
+  , helpMessage
+  , repeatMessage
   ) where
 
 import           Control.Monad.Catch
-import           Data.Aeson            (FromJSON)
+import           Data.Aeson
 import           Data.ByteString.Char8 (ByteString)
 import           Data.Text             (Text)
 import qualified Data.Text.IO          as TIO
@@ -22,10 +24,6 @@ import           Relude
 import           Miscellanea
 import qualified Network.Request
 import           ParseJSON
-
-type Method = ByteString
-
-type Token = Text
 
 data Config =
   Config
@@ -56,6 +54,10 @@ create Network.Request.Config {..} Info {..} =
   setRequestPort 443 $ setRequestSecure True $ defaultRequest
   where
     path = "/bot" <> encodeUtf8 token <> "/" <> method
+
+type Method = ByteString
+
+type Token = Text
 
 data Info =
   Info
@@ -91,3 +93,34 @@ copyMessage chat_id message_id =
       , ("from_chat_id", Just chat_id)
       , ("message_id", Just message_id)
       ]
+
+helpMessage :: ChatId -> Config -> Info
+helpMessage chat_id Config {..} =
+  Info {method = "sendMessage", qStr = helpMessageQuery chat_id help}
+  where
+    helpMessageQuery chat_id help =
+      [("chat_id", Just $ showBS chat_id), ("text", Just $ encodeUtf8 help)]
+
+data Keyboard =
+  Keyboard
+    { keyboard :: [[Button]]
+    }
+  deriving (Generic, ToJSON)
+
+data Button =
+  Button
+    { text :: Text
+    }
+  deriving (Generic, ToJSON)
+
+repeatMessage :: ChatId -> Config -> Info
+repeatMessage chat_id Config {..} =
+  Info {method = "sendMessage", qStr = repeatMessageQuery chat_id question}
+  where
+    repeatMessageQuery chat_id question =
+      [ ("chat_id", Just $ showBS chat_id)
+      , ("text", Just $ encodeUtf8 question)
+      , ("reply_markup", Just $ toStrict $ encode kboard)
+      ]
+      where
+        kboard = Keyboard {keyboard = [map Button ["1", "2", "3", "4", "5"]]}
