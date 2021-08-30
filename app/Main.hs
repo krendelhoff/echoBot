@@ -12,14 +12,12 @@ import qualified Network.Request.Imp   as Request.Imp
 import           Control.Exception
 import           Control.Monad.Except
 import qualified Data.ByteString.Char8 as BC (readFile)
+import           Data.Either           (fromRight, isRight)
 import qualified Data.Map              as M
 import qualified Data.Text.IO          as TIO
 import           Relude
 import qualified System.IO             as SIO
 
--- Handle для сервисов и для подмен реализаций
--- а тут мы стейт приложения закидываем в ReaderT, в принципе все проблемы разрешены, дальше теперь только JSON нормально спарсить
--- и писать
 data Env =
   Env
     { reqConfig    :: Request.Config
@@ -43,7 +41,6 @@ main = do
   -- app begins
   Logger.Display.withHandle cLogger $ \hLogger -> do
     forever $
-      -- результат и так прологгируется, но ExceptT позволит прекратить исполнение
       runBot
         bot
         (Env
@@ -53,7 +50,6 @@ main = do
            , offsetRef = offset
            , repeatMapRef = repeatMap
            })
-    return ()
 
 runBot bot rdr = runExceptT $ runReaderT (bot) rdr
 
@@ -63,12 +59,16 @@ bot = do
   Env {..} <- ask
   offset <- readIORef offsetRef
   let getUpdates = Data.Request.getUpdates offset funcConfig
-  liftIO $
-    Request.Imp.withHandle reqConfig hLogger getUpdates $ \hRequest -> do
-      result <- runExceptT $ Request.perform hRequest
-      case result of
-        Left _        -> return ()
-        Right updates -> BC.putStrLn updates
+      makeRequest req =
+        Request.Imp.withHandle
+          reqConfig
+          hLogger
+          req
+          (runExceptT . Request.perform)
+  result <- liftIO $ makeRequest getUpdates
+  when (isRight result) $ do
+    let updates = fromRight "" result
+    liftIO $ BC.putStrLn updates
         -- copyMessage
 
 readConfig =
