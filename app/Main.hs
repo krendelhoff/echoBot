@@ -8,9 +8,11 @@ import qualified Logger.Display
 import           Miscellanea
 import qualified Network.Request       as Request
 import qualified Network.Request.Imp   as Request.Imp
+import qualified ParseJSON
 
 import           Control.Exception
 import           Control.Monad.Except
+import           Data.Aeson            (decodeStrict)
 import qualified Data.ByteString.Char8 as BC (readFile)
 import           Data.Either           (fromRight, isRight)
 import qualified Data.Map              as M
@@ -52,9 +54,6 @@ main = do
            , repeatMapRef = repeatMap
            })
 
-runBot bot rdr = runExceptT $ runReaderT (bot) rdr
-
--- пусть я понапишу кучу case, зато я контролирую ситуацию!
 bot :: (MonadIO m, MonadReader Env m) => m ()
 bot = do
   Env {..} <- ask
@@ -68,9 +67,19 @@ bot = do
           (runExceptT . Request.perform)
   result <- liftIO $ makeRequest getUpdates
   when (isRight result) $ do
-    let updates = fromRight "" result
-    liftIO $ BC.putStrLn updates
-        -- copyMessage
+    let rawJSON = fromRight "" result
+        updatesMaybe = decodeStrict rawJSON
+    case updatesMaybe of
+      Nothing -> liftIO $ log hLogger Error "Got incorrect getUpdates JSON data"
+      Just ParseJSON.Updates {result = updates, ..} -> do
+        forM_ updates $ \ParseJSON.Update {..} -> do
+          return ()
+          {-- MUTATING STATE --}
+          writeIORef offsetRef $ succ update_id
+          -----------------
+          let copyMessage = Data.Request.copyMessage id message_id
+          -- TODO проверку, что всё успешно
+          liftIO $ makeRequest copyMessage
 
 readConfig =
   BC.readFile "config.yaml" `catch`
@@ -79,3 +88,5 @@ readConfig =
      TIO.putStrLn $ "Here is what happened:"
      TIO.putStrLn $ showText (exception :: SomeException)
      exitFailure)
+
+runBot bot rdr = runReaderT (bot) rdr

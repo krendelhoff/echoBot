@@ -3,10 +3,10 @@ module Data.Request
   , Info(..)
   , Method
   , Token
-  , getUpdatesQuery
   , getUpdates
   , Config(..)
   , parseConfig
+  , copyMessage
   ) where
 
 import           Control.Monad.Catch
@@ -16,11 +16,12 @@ import           Data.Text             (Text)
 import qualified Data.Text.IO          as TIO
 import           Data.Yaml             (decodeThrow)
 import           GHC.Generics
-import           Miscellanea
 import           Network.HTTP.Simple
 import           Relude
 
+import           Miscellanea
 import qualified Network.Request
+import           ParseJSON
 
 type Method = ByteString
 
@@ -67,10 +68,26 @@ type Offset = Int
 
 type TimeOut = Int
 
-getUpdatesQuery :: Offset -> TimeOut -> Query
-getUpdatesQuery offset timeout =
-  [("offset", Just $ showBS offset), ("timeout", Just $ showBS timeout)]
-
 getUpdates :: Offset -> Config -> Info
 getUpdates offset funcConfig@Config {..} =
   Info {method = "getUpdates", qStr = getUpdatesQuery offset timeout}
+  where
+    getUpdatesQuery :: Offset -> TimeOut -> Query
+    getUpdatesQuery offset timeout =
+      [("offset", Just $ showBS offset), ("timeout", Just $ showBS timeout)]
+
+type ChatId = Int
+
+type MessageId = Int
+
+copyMessage :: ChatId -> MessageId -> Info
+copyMessage chat_id message_id =
+  Info {method = "copyMessage", qStr = copyMessageQuery chat_id message_id}
+  where
+    copyMessageQuery :: ChatId -> MessageId -> Query
+    copyMessageQuery chat_id message_id =
+      ((showBS <$>) <$>) <$>
+      [ ("chat_id", Just chat_id)
+      , ("from_chat_id", Just chat_id)
+      , ("message_id", Just message_id)
+      ]

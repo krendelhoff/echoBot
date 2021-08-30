@@ -18,10 +18,11 @@ data Updates =
 -- это вся информация для формирования ответного реквеста
 data Update =
   Update
-    { update_id :: Int
-    , id        :: Int
-    , username  :: Text
-    , text      :: Text
+    { update_id  :: Int
+    , id         :: Int
+    , message_id :: Int
+    , username   :: Text
+    , text       :: Maybe Text
     }
   deriving (Show)
 
@@ -29,8 +30,10 @@ instance FromJSON Update where
   parseJSON =
     withObject "telegram update" $ \o -> do
       update_id <- o .: "update_id"
-      chatO <- o .: "chat"
+      messageO <- o .: "message"
+      text <- messageO .: "text"
+      message_id <- messageO .: "message_id"
+      chatO <- messageO .: "chat"
       id <- chatO .: "id"
       username <- chatO .: "username"
-      text <- o .: "text"
       return $ Update {..}

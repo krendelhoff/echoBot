@@ -1,10 +1,10 @@
 # HTTP config
 token: 1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU
-timeout: 1
+timeout: 40
 
 # Logger config
 mode: File
-priority: Info
+priority: Error
 file: log.txt
 
 # Bot config
