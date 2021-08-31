@@ -7,10 +7,10 @@ module Data.Request
   , Config(..)
   , parseConfig
   , copyMessage
-  , helpMessage
-  , repeatMessage
-  , repeatErrorMessage
   , sendMessage
+  , addKeyboardMarkup
+  , addQuery
+  , removeKeyboardMarkup
   ) where
 
 import           Control.Monad.Catch
@@ -96,13 +96,6 @@ copyMessage chat_id message_id =
       , ("message_id", Just message_id)
       ]
 
-helpMessage :: ChatId -> Config -> Info
-helpMessage chat_id Config {..} =
-  Info {method = "sendMessage", qStr = helpMessageQuery chat_id help}
-  where
-    helpMessageQuery chat_id help =
-      [("chat_id", Just $ showBS chat_id), ("text", Just $ encodeUtf8 help)]
-
 data Keyboard =
   Keyboard
     { keyboard :: [[Button]]
@@ -115,17 +108,10 @@ data Button =
     }
   deriving (Generic, ToJSON)
 
-repeatMessage :: ChatId -> Config -> Info
-repeatMessage chat_id Config {..} =
-  Info {method = "sendMessage", qStr = repeatMessageQuery chat_id question}
+addKeyboardMarkup :: QueryItem
+addKeyboardMarkup = ("reply_markup", Just $ toStrict $ encode kboard)
   where
-    repeatMessageQuery chat_id question =
-      [ ("chat_id", Just $ showBS chat_id)
-      , ("text", Just $ encodeUtf8 question)
-      , ("reply_markup", Just $ toStrict $ encode kboard)
-      ]
-      where
-        kboard = Keyboard {keyboard = [map Button ["1", "2", "3", "4", "5"]]}
+    kboard = Keyboard {keyboard = [map Button ["1", "2", "3", "4", "5"]]}
 
 sendMessage :: ChatId -> Text -> Info
 sendMessage chat_id text =
@@ -135,12 +121,15 @@ sendMessage chat_id text =
         [("chat_id", Just $ showBS chat_id), ("text", Just $ encodeUtf8 text)]
     }
 
-repeatErrorMessage :: ChatId -> Info
-repeatErrorMessage chat_id =
-  Info
-    { method = "sendMessage"
-    , qStr =
-        [ ("chat_id", Just $ showBS chat_id)
-        , ("text", Just $ "Wrong value! Choose from 1 to 5, please.")
-        ]
+data ReplyKeyboardRemove =
+  ReplyKeyboardRemove
+    { remove_keyboard :: Bool
     }
+  deriving (Generic, ToJSON)
+
+removeKeyboardMarkup :: QueryItem
+removeKeyboardMarkup =
+  ("reply_markup", Just $ toStrict $ encode $ ReplyKeyboardRemove True)
+
+addQuery :: Info -> QueryItem -> Info
+addQuery info qItem = info {qStr = qItem : qStr info}

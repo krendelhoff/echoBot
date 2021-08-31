@@ -1,6 +1,7 @@
 module Main where
 
 import qualified Data.ByteString.Char8 as BC
+import           Data.Request          (addQuery)
 import qualified Data.Request
 import           Logger                (Mode (..), Priority (..), log)
 import qualified Logger
@@ -88,11 +89,16 @@ processUpdate update@ParseJSON.Update {..} = do
     Just txt -> do
       case txt of
         "/help" -> do
-          let helpMessage = Data.Request.helpMessage id funcConfig
+          let helpMessage =
+                Data.Request.sendMessage id (Data.Request.help funcConfig)
           liftIO $ makeRequest env helpMessage -- TODO check
           return ()
         "/repeat" -> do
-          let repeatMessage = Data.Request.repeatMessage id funcConfig
+          let repeatMessage =
+                Data.Request.sendMessage
+                  id
+                  (Data.Request.question funcConfig <> ": " <> showText repeat) `addQuery`
+                Data.Request.addKeyboardMarkup
           liftIO $ makeRequest env repeatMessage
           processRepeatMessage
         _ -> do
@@ -112,41 +118,42 @@ processRepeatMessage = do
         liftIO $ log hLogger Error "Got incorrect getUpdates JSON data"
       Right ParseJSON.Updates {result = updates, ..} -> do
         let maybeUpdates = nonEmpty updates
-        maybe
-          processRepeatMessage
-          (\updates -> do
-             let first@ParseJSON.Update {..} = head updates
-                 second = tail updates
-                 repeatErrorMessage = Data.Request.repeatErrorMessage id
-          {-- MUTATING STATE --}
-             writeIORef offsetRef $ succ update_id
-          ----------------------
-             case text of
-               Nothing -> do
-                 liftIO $ makeRequest env repeatErrorMessage -- TODO check
-                 return ()
-               Just txt -> do
-                 if txt `elem` ["1", "2", "3", "4", "5"]
-                     {-- READING MUTABLE STATE --}
-                   then do
-                     repeatMap <- readIORef repeatMapRef
-                     -----------------------------
-                     let repeatMaybe = (readMaybe $ T.unpack $ txt) :: Maybe Int
-                     case repeatMaybe of
-                       Just repeat -> do
-                         writeIORef repeatMapRef (M.insert id repeat repeatMap)
-                         let sendMessage = Data.Request.sendMessage id
-                         liftIO $
-                           makeRequest
-                             env
-                             (sendMessage "Successfully updated repeat value!")
-                         return () -- TODO check
-                       _ -> return ()
-                   else do
-                     liftIO $ makeRequest env repeatErrorMessage -- TODO check
-                     return ()
-             forM_ second processUpdate)
-          maybeUpdates -- case при большом коде сильно лучше чем maybe и either
+        case maybeUpdates of
+          Nothing -> processRepeatMessage
+          Just updates -> do
+            let first@ParseJSON.Update {..} = head updates
+                second = tail updates
+                repeatErrorMessage =
+                  Data.Request.sendMessage
+                    id
+                    "Wrong value! Choose from 1 to 5, please."
+             {---------- MUTATING STATE ---------}
+            writeIORef offsetRef $ succ update_id
+             -------------------------------------
+            case text of
+              Nothing -> do
+                liftIO $ makeRequest env repeatErrorMessage -- TODO check
+                processRepeatMessage -- arguable
+              Just txt -> do
+                if txt `elem` ["1", "2", "3", "4", "5"]
+                  then do
+                    let repeatMaybe = (readMaybe $ T.unpack $ txt) :: Maybe Int
+                    case repeatMaybe of
+                      Just repeat -> do
+                        modifyIORef repeatMapRef (M.insert id repeat)
+                        let sendMessage txt =
+                              Data.Request.sendMessage id txt `addQuery`
+                              Data.Request.removeKeyboardMarkup
+                        liftIO $
+                          makeRequest
+                            env
+                            (sendMessage "Successfully updated repeat value!")
+                        return () -- TODO check
+                      _ -> return ()
+                  else do
+                    liftIO $ makeRequest env repeatErrorMessage -- TODO check
+                    processRepeatMessage -- arguable
+            forM_ second processUpdate
 
 readConfig =
   BC.readFile "config.yaml" `catch`

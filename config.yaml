@@ -1,6 +1,6 @@
 # HTTP config
 token: 1913597879:AAEQ8hYhCyNoavFzxHWYcf2Lg-ejOSt48NU
-timeout: 40
+timeout: 20
 
 # Logger config
 mode: Stdout
@@ -10,4 +10,4 @@ file: log.txt
 # Bot config
 question: Current repeat value
 help: You're my frien now :>
-repeat: 5
+repeat: 1
