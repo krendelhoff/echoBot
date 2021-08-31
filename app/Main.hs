@@ -104,6 +104,11 @@ processUpdate update@ParseJSON.Update {..} = do
         _ -> do
           makeMultipleRequest env repeat copyMessage -- TODO check
 
+-- тут огромная проблема - надо не голову брать, а тот, где айди нужный
+-- мы getUpdates берем, берем голову, а это может апдейт от другого чувака быть
+-- короче продумаем дальше
+-- sql, bragil, bot, alghs
+-- свежая голова для свежего взгляда, отвлечение
 processRepeatMessage :: (MonadReader Env m, MonadIO m) => m ()
 processRepeatMessage = do
   env@Env {..} <- ask
@@ -112,7 +117,8 @@ processRepeatMessage = do
   -----------------------------
   let getUpdates = Data.Request.getUpdates offset funcConfig
   result <- liftIO $ makeRequest env getUpdates
-  when (isRight result) $ do
+  when (isRight result) $ do liftIO $ BC.putStrLn (fromRight "" result)
+    {-
     case updatesEither result of
       Left err ->
         liftIO $ log hLogger Error "Got incorrect getUpdates JSON data"
@@ -127,9 +133,9 @@ processRepeatMessage = do
                   Data.Request.sendMessage
                     id
                     "Wrong value! Choose from 1 to 5, please."
-             {---------- MUTATING STATE ---------}
+            {---------- MUTATING STATE ----------}
             writeIORef offsetRef $ succ update_id
-             -------------------------------------
+            -------------------------------------
             case text of
               Nothing -> do
                 liftIO $ makeRequest env repeatErrorMessage -- TODO check
@@ -153,7 +159,7 @@ processRepeatMessage = do
                   else do
                     liftIO $ makeRequest env repeatErrorMessage -- TODO check
                     processRepeatMessage -- arguable
-            forM_ second processUpdate
+            forM_ second processUpdate-}
 
 readConfig =
   BC.readFile "config.yaml" `catch`

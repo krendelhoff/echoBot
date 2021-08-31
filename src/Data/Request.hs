@@ -3,6 +3,7 @@ module Data.Request
   , Info(..)
   , Method
   , Token
+  , ChatId
   , getUpdates
   , Config(..)
   , parseConfig
@@ -78,7 +79,10 @@ getUpdates offset funcConfig@Config {..} =
   where
     getUpdatesQuery :: Offset -> TimeOut -> Query
     getUpdatesQuery offset timeout =
-      [("offset", Just $ showBS offset), ("timeout", Just $ showBS timeout)]
+      [ ("offset", Just $ showBS offset)
+      , ("timeout", Just $ showBS timeout)
+      , ("allowed_updates", Just $ toStrict $ encode ([] :: [Text]))
+      ]
 
 type ChatId = Int
 
@@ -98,20 +102,23 @@ copyMessage chat_id message_id =
 
 data Keyboard =
   Keyboard
-    { keyboard :: [[Button]]
+    { inline_keyboard :: [[Button]]
     }
   deriving (Generic, ToJSON)
 
 data Button =
   Button
-    { text :: Text
+    { text          :: Text
+    , callback_data :: Text
     }
   deriving (Generic, ToJSON)
 
 addKeyboardMarkup :: QueryItem
 addKeyboardMarkup = ("reply_markup", Just $ toStrict $ encode kboard)
   where
-    kboard = Keyboard {keyboard = [map Button ["1", "2", "3", "4", "5"]]}
+    kboard =
+      Keyboard
+        {inline_keyboard = [map (\x -> Button x x) ["1", "2", "3", "4", "5"]]}
 
 sendMessage :: ChatId -> Text -> Info
 sendMessage chat_id text =

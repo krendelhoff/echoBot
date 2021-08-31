@@ -20,12 +20,15 @@ data Updates =
 data Update =
   Update
     { update_id  :: Int
-    , id         :: Int
-    , message_id :: Int
-    , username   :: Text
-    , text       :: Maybe Text
+      update :: UpdateType
+
     }
   deriving (Show)
+
+data UpdateType = Message {    id         :: Int
+    , message_id :: Int
+    , username   :: Text
+    , text       :: Maybe Text} | CallbackQuery { ... }
 
 defaultUpdate = Update 0 0 0 "" Nothing
 
