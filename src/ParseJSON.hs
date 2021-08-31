@@ -1,6 +1,7 @@
 module ParseJSON
   ( Updates(..)
   , Update(..)
+  , defaultUpdate
   ) where
 
 import           Data.Aeson
@@ -25,6 +26,8 @@ data Update =
     , text       :: Maybe Text
     }
   deriving (Show)
+
+defaultUpdate = Update 0 0 0 "" Nothing
 
 instance FromJSON Update where
   parseJSON =

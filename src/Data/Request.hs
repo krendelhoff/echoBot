@@ -9,6 +9,8 @@ module Data.Request
   , copyMessage
   , helpMessage
   , repeatMessage
+  , repeatErrorMessage
+  , sendMessage
   ) where
 
 import           Control.Monad.Catch
@@ -124,3 +126,21 @@ repeatMessage chat_id Config {..} =
       ]
       where
         kboard = Keyboard {keyboard = [map Button ["1", "2", "3", "4", "5"]]}
+
+sendMessage :: ChatId -> Text -> Info
+sendMessage chat_id text =
+  Info
+    { method = "sendMessage"
+    , qStr =
+        [("chat_id", Just $ showBS chat_id), ("text", Just $ encodeUtf8 text)]
+    }
+
+repeatErrorMessage :: ChatId -> Info
+repeatErrorMessage chat_id =
+  Info
+    { method = "sendMessage"
+    , qStr =
+        [ ("chat_id", Just $ showBS chat_id)
+        , ("text", Just $ "Wrong value! Choose from 1 to 5, please.")
+        ]
+    }

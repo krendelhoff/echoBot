@@ -10,4 +10,4 @@ file: log.txt
 # Bot config
 question: Current repeat value
 help: You're my frien now :>
-repeat: 1
+repeat: 5
