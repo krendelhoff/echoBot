@@ -1,6 +1,10 @@
 module ParseJSON
   ( Updates(..)
   , Update(..)
+  , UpdateType(..)
+  , Message(..)
+  , CallbackQuery(..)
+  , CheckSuccessQuery(..)
   , defaultUpdate
   ) where
 
@@ -19,38 +23,76 @@ data Updates =
 -- это вся информация для формирования ответного реквеста
 data Update =
   Update
-    { update_id  :: Int
-      update :: UpdateType
-
+    { update_id :: Int
+    , update    :: UpdateType
     }
   deriving (Show)
 
-data UpdateType = Message {    id         :: Int
+data Message =
+  Message
+    { id         :: Int
     , message_id :: Int
     , username   :: Text
-    , text       :: Maybe Text} | CallbackQuery { ... }
+    , text       :: Maybe Text
+    }
+  deriving (Show)
 
-defaultUpdate = Update 0 0 0 "" Nothing
+data CallbackQuery =
+  CallbackQuery
+    { callback_id   :: Text
+    , callback_data :: Text
+    }
+  deriving (Show)
+
+data CheckSuccessQuery =
+  CheckSuccessQuery
+    { mes_id :: Int
+    }
+  deriving (Show)
+
+data UpdateType
+  = MessageType Message
+  | CallbackQueryType CallbackQuery
+  | CheckSuccessQueryType CheckSuccessQuery
+  deriving (Show)
+
+instance FromJSON UpdateType where
+  parseJSON o =
+    asum . map ($ o) $
+    [ (MessageType <$>) . parseJSON
+    , (CallbackQueryType <$>) . parseJSON
+    , (CheckSuccessQueryType <$>) . parseJSON
+    ]
+
+defaultUpdate = Update 0 (MessageType $ Message 0 0 "" Nothing)
+
+instance FromJSON Message where
+  parseJSON =
+    withObject "telegram message update" $ \o -> do
+      messageO <- o .: "message"
+      message_id <- messageO .: "message_id"
+      text <- optional $ messageO .: "text"
+      chatO <- messageO .: "chat"
+      username <- chatO .: "username"
+      id <- chatO .: "id"
+      return $ Message {..}
+
+instance FromJSON CallbackQuery where
+  parseJSON =
+    withObject "telegram callback query update" $ \o -> do
+      cbO <- o .: "callback_query"
+      callback_id <- cbO .: "id"
+      callback_data <- cbO .: "data"
+      return $ CallbackQuery {..}
+
+instance FromJSON CheckSuccessQuery where
+  parseJSON =
+    withObject "telegram check success query update" $ \o -> do
+      messageO <- o .: "message"
+      mes_id <- messageO .: "message_id"
+      return $ CheckSuccessQuery {..}
 
 instance FromJSON Update where
   parseJSON =
-    withObject
-      "telegram update"
-      ((<|>) <$> updateParser <*> copyMessageCheckSuccessParser)
-    where
-      updateParser o = do
-        update_id <- o .: "update_id"
-        messageO <- o .: "message"
-        text <- optional $ messageO .: "text"
-        message_id <- messageO .: "message_id"
-        chatO <- messageO .: "chat"
-        id <- chatO .: "id"
-        username <- chatO .: "username"
-        return $ Update {..}
-      copyMessageCheckSuccessParser o = do
-        let update_id = 0
-            id = 0
-            username = ""
-            text = Nothing
-        message_id <- o .: "message_id"
-        return $ Update {..}
+    withObject "telegram full update parsing" $ \o ->
+      Update <$> o .: "update_id" <*> parseJSON (Object o)

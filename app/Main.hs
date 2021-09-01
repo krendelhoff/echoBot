@@ -9,6 +9,7 @@ import qualified Logger.Display
 import           Miscellanea
 import qualified Network.Request       as Request
 import qualified Network.Request.Imp   as Request.Imp
+import           ParseJSON             (Message (..), UpdateType (MessageType))
 import qualified ParseJSON
 
 import           Control.Exception
@@ -66,14 +67,19 @@ bot = do
   let getUpdates = Data.Request.getUpdates offset funcConfig
   result <- liftIO $ makeRequest env getUpdates
   when (isRight result) $ do
+    liftIO $ BC.putStrLn (fromRight "" result)
+    liftIO $
+      print
+        ((eitherDecodeStrict' (fromRight "" result)) :: Either String ParseJSON.Updates) {-
     case updatesEither result of
       Left err ->
         liftIO $ log hLogger Error "Got incorrect getUpdates JSON data"
       Right ParseJSON.Updates {result = updates, ..} -> do
         forM_ updates processUpdate
+        -}
 
 processUpdate :: (MonadReader Env m, MonadIO m) => ParseJSON.Update -> m ()
-processUpdate update@ParseJSON.Update {..} = do
+processUpdate update@ParseJSON.Update {update = MessageType (Message {..}), ..} = do
   env@Env {..} <- ask
   {-- MUTATING STATE --}
   writeIORef offsetRef $ succ update_id
@@ -100,66 +106,10 @@ processUpdate update@ParseJSON.Update {..} = do
                   (Data.Request.question funcConfig <> ": " <> showText repeat) `addQuery`
                 Data.Request.addKeyboardMarkup
           liftIO $ makeRequest env repeatMessage
-          processRepeatMessage
+          return ()
         _ -> do
           makeMultipleRequest env repeat copyMessage -- TODO check
-
--- тут огромная проблема - надо не голову брать, а тот, где айди нужный
--- мы getUpdates берем, берем голову, а это может апдейт от другого чувака быть
--- короче продумаем дальше
--- sql, bragil, bot, alghs
--- свежая голова для свежего взгляда, отвлечение
-processRepeatMessage :: (MonadReader Env m, MonadIO m) => m ()
-processRepeatMessage = do
-  env@Env {..} <- ask
-  {-- READING MUTABLE STATE --}
-  offset <- readIORef offsetRef
-  -----------------------------
-  let getUpdates = Data.Request.getUpdates offset funcConfig
-  result <- liftIO $ makeRequest env getUpdates
-  when (isRight result) $ do liftIO $ BC.putStrLn (fromRight "" result)
-    {-
-    case updatesEither result of
-      Left err ->
-        liftIO $ log hLogger Error "Got incorrect getUpdates JSON data"
-      Right ParseJSON.Updates {result = updates, ..} -> do
-        let maybeUpdates = nonEmpty updates
-        case maybeUpdates of
-          Nothing -> processRepeatMessage
-          Just updates -> do
-            let first@ParseJSON.Update {..} = head updates
-                second = tail updates
-                repeatErrorMessage =
-                  Data.Request.sendMessage
-                    id
-                    "Wrong value! Choose from 1 to 5, please."
-            {---------- MUTATING STATE ----------}
-            writeIORef offsetRef $ succ update_id
-            -------------------------------------
-            case text of
-              Nothing -> do
-                liftIO $ makeRequest env repeatErrorMessage -- TODO check
-                processRepeatMessage -- arguable
-              Just txt -> do
-                if txt `elem` ["1", "2", "3", "4", "5"]
-                  then do
-                    let repeatMaybe = (readMaybe $ T.unpack $ txt) :: Maybe Int
-                    case repeatMaybe of
-                      Just repeat -> do
-                        modifyIORef repeatMapRef (M.insert id repeat)
-                        let sendMessage txt =
-                              Data.Request.sendMessage id txt `addQuery`
-                              Data.Request.removeKeyboardMarkup
-                        liftIO $
-                          makeRequest
-                            env
-                            (sendMessage "Successfully updated repeat value!")
-                        return () -- TODO check
-                      _ -> return ()
-                  else do
-                    liftIO $ makeRequest env repeatErrorMessage -- TODO check
-                    processRepeatMessage -- arguable
-            forM_ second processUpdate-}
+processUpdate _ = return ()
 
 readConfig =
   BC.readFile "config.yaml" `catch`
@@ -180,5 +130,6 @@ makeRequest Env {..} req =
 
 makeMultipleRequest env repeat = replicateM_ repeat . liftIO . makeRequest env
 
-howMuch Env {..} ParseJSON.Update {..} repeatMap =
+howMuch Env {..} ParseJSON.Update {update = MessageType (Message {..}), ..} repeatMap =
   maybe (Data.Request.repeat funcConfig) (\a -> a) (M.lookup id repeatMap)
+howMuch _ _ _ = 1
