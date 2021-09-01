@@ -34,6 +34,9 @@ data Env =
     , repeatMapRef :: IORef (M.Map Int Int)
     }
 
+-- да по сути осталось только реализовать проверку message_id в респонсах и все
+-- т.к. ошибки и так логгируются
+-- ничего больше и не нужно
 main :: IO ()
 main = do
   return ()
@@ -42,6 +45,7 @@ main = do
   cLogger <- Logger.Display.parseConfig rawData
   cRequest <- Request.parseConfig rawData
   cFunc <- Data.Request.parseConfig rawData
+  -- если конфига нет, создать с дефолтными и попросить ввести токен
   -- defining all mutable state
   offset <- newIORef 0
   repeatMap <- newIORef M.empty
