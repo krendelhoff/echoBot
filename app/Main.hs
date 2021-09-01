@@ -9,7 +9,8 @@ import qualified Logger.Display
 import           Miscellanea
 import qualified Network.Request       as Request
 import qualified Network.Request.Imp   as Request.Imp
-import           ParseJSON             (Message (..), UpdateType (MessageType))
+import           ParseJSON             (CallbackQuery (..), Message (..),
+                                        UpdateType (CallbackQueryType, MessageType))
 import qualified ParseJSON
 
 import           Control.Exception
@@ -67,16 +68,11 @@ bot = do
   let getUpdates = Data.Request.getUpdates offset funcConfig
   result <- liftIO $ makeRequest env getUpdates
   when (isRight result) $ do
-    liftIO $ BC.putStrLn (fromRight "" result)
-    liftIO $
-      print
-        ((eitherDecodeStrict' (fromRight "" result)) :: Either String ParseJSON.Updates) {-
     case updatesEither result of
       Left err ->
         liftIO $ log hLogger Error "Got incorrect getUpdates JSON data"
       Right ParseJSON.Updates {result = updates, ..} -> do
         forM_ updates processUpdate
-        -}
 
 processUpdate :: (MonadReader Env m, MonadIO m) => ParseJSON.Update -> m ()
 processUpdate update@ParseJSON.Update {update = MessageType (Message {..}), ..} = do
@@ -109,6 +105,21 @@ processUpdate update@ParseJSON.Update {update = MessageType (Message {..}), ..} 
           return ()
         _ -> do
           makeMultipleRequest env repeat copyMessage -- TODO check
+processUpdate update@ParseJSON.Update { update = CallbackQueryType (CallbackQuery {..})
+                                      , ..
+                                      } = do
+  env@Env {..} <- ask
+  {--------- MUTATING STATE ----------}
+  writeIORef offsetRef $ succ update_id
+  -------------------------------------
+  let newRepeatMaybe = readMaybe (T.unpack callback_data)
+  case newRepeatMaybe of
+    Nothing -> return ()
+    Just newRepeat -> do
+      modifyIORef repeatMapRef (M.insert user_id newRepeat)
+      let answerCallbackQuery = Data.Request.answerCallbackQuery callback_id
+      liftIO $ makeRequest env answerCallbackQuery
+      return ()
 processUpdate _ = return ()
 
 readConfig =

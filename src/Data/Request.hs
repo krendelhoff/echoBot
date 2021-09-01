@@ -12,6 +12,7 @@ module Data.Request
   , addKeyboardMarkup
   , addQuery
   , removeKeyboardMarkup
+  , answerCallbackQuery
   ) where
 
 import           Control.Monad.Catch
@@ -140,3 +141,15 @@ removeKeyboardMarkup =
 
 addQuery :: Info -> QueryItem -> Info
 addQuery info qItem = info {qStr = qItem : qStr info}
+
+type CallbackId = Text
+
+answerCallbackQuery :: CallbackId -> Info
+answerCallbackQuery cid =
+  Info
+    { method = "answerCallbackQuery"
+    , qStr =
+        [ ("callback_query_id", Just $ encodeUtf8 cid)
+        , ("text", Just $ "Successfully changed repeat rate!")
+        ]
+    }

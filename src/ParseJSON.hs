@@ -41,6 +41,7 @@ data CallbackQuery =
   CallbackQuery
     { callback_id   :: Text
     , callback_data :: Text
+    , user_id       :: Int
     }
   deriving (Show)
 
@@ -83,6 +84,8 @@ instance FromJSON CallbackQuery where
       cbO <- o .: "callback_query"
       callback_id <- cbO .: "id"
       callback_data <- cbO .: "data"
+      fromO <- cbO .: "from"
+      user_id <- fromO .: "id"
       return $ CallbackQuery {..}
 
 instance FromJSON CheckSuccessQuery where
