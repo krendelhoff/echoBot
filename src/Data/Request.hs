@@ -3,6 +3,7 @@ module Data.Request
   , Info(..)
   , Method
   , Token
+  , MessageId
   , ChatId
   , getUpdates
   , Config(..)

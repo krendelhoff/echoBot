@@ -122,7 +122,9 @@ processUpdate update@ParseJSON.Update { update = CallbackQueryType (CallbackQuer
     Just newRepeat -> do
       modifyIORef repeatMapRef (M.insert user_id newRepeat)
       let answerCallbackQuery = Data.Request.answerCallbackQuery callback_id
-      liftIO $ makeRequest env answerCallbackQuery
+      result <- liftIO $ makeRequest env answerCallbackQuery
+      let toPrint = fromRight "" result
+      liftIO $ BC.putStrLn toPrint
       return ()
 processUpdate _ = return ()
 

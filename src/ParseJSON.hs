@@ -45,25 +45,22 @@ data CallbackQuery =
     }
   deriving (Show)
 
-data CheckSuccessQuery =
-  CheckSuccessQuery
-    { mes_id :: Int
-    }
-  deriving (Show)
+type MessageId = Int
+
+data CheckSuccessQuery
+  = CMsg Bool MessageId
+  | CCbq Bool Bool
+  deriving (Show) -- ета не апдейт
 
 data UpdateType
   = MessageType Message
   | CallbackQueryType CallbackQuery
-  | CheckSuccessQueryType CheckSuccessQuery
   deriving (Show)
 
 instance FromJSON UpdateType where
   parseJSON o =
     asum . map ($ o) $
-    [ (MessageType <$>) . parseJSON
-    , (CallbackQueryType <$>) . parseJSON
-    , (CheckSuccessQueryType <$>) . parseJSON
-    ]
+    [(MessageType <$>) . parseJSON, (CallbackQueryType <$>) . parseJSON]
 
 defaultUpdate = Update 0 (MessageType $ Message 0 0 "" Nothing)
 
@@ -90,10 +87,16 @@ instance FromJSON CallbackQuery where
 
 instance FromJSON CheckSuccessQuery where
   parseJSON =
-    withObject "telegram check success query update" $ \o -> do
-      messageO <- o .: "message"
-      mes_id <- messageO .: "message_id"
-      return $ CheckSuccessQuery {..}
+    withObject "telegram check success query update" $ \o ->
+      asum . map ($ o) [mesgParser, cbQParser]
+    where
+      msgParser o = do
+        messageO <- o .: "message"
+        CMsg <$> messageO .: "message_id"
+      cbQParser o = do
+        ok <- o .: "ok"
+        result <- o .: "result"
+        return $ CCbq ok result
 
 instance FromJSON Update where
   parseJSON =
