@@ -35,7 +35,7 @@ data Message =
     , username   :: Text
     , text       :: Maybe Text
     }
-  deriving (Show)
+  deriving (Eq, Show)
 
 data CallbackQuery =
   CallbackQuery
@@ -48,9 +48,10 @@ data CallbackQuery =
 type MessageId = Int
 
 data CheckSuccessQuery
-  = CMsg Bool MessageId
-  | CCbq Bool Bool
-  deriving (Show) -- ета не апдейт
+  = CopyMsg Bool MessageId
+  | Msg Bool Message
+  | Cbq Bool Bool
+  deriving (Show)
 
 data UpdateType
   = MessageType Message
@@ -87,16 +88,28 @@ instance FromJSON CallbackQuery where
 
 instance FromJSON CheckSuccessQuery where
   parseJSON =
-    withObject "telegram check success query update" $ \o ->
-      asum . map ($ o) [mesgParser, cbQParser]
+    withObject "telegram check success query update" $ \o -> do
+      asum . map ($ o) $ [msgParser, copyMsgParser, cbQParser]
     where
-      msgParser o = do
-        messageO <- o .: "message"
-        CMsg <$> messageO .: "message_id"
+      copyMsgParser o = do
+        ok <- o .: "ok"
+        resultO <- o .: "result"
+        message_id <- resultO .: "message_id"
+        return $ CopyMsg ok message_id
       cbQParser o = do
         ok <- o .: "ok"
         result <- o .: "result"
-        return $ CCbq ok result
+        return $ Cbq ok result
+      -- repeating myself cause of one small detail
+      msgParser o = do
+        ok <- o .: "ok"
+        messageO <- o .: "result"
+        message_id <- messageO .: "message_id"
+        text <- optional $ messageO .: "text"
+        chatO <- messageO .: "chat"
+        username <- chatO .: "username"
+        id <- chatO .: "id"
+        return $ Msg ok Message {..}
 
 instance FromJSON Update where
   parseJSON =

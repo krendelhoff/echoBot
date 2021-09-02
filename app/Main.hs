@@ -34,9 +34,6 @@ data Env =
     , repeatMapRef :: IORef (M.Map Int Int)
     }
 
--- да по сути осталось только реализовать проверку message_id в респонсах и все
--- т.к. ошибки и так логгируются
--- ничего больше и не нужно
 main :: IO ()
 main = do
   return ()
@@ -72,6 +69,8 @@ bot = do
   let getUpdates = Data.Request.getUpdates offset funcConfig
   result <- liftIO $ makeRequest env getUpdates
   when (isRight result) $ do
+    let toPrint = fromRight "" result
+      {-liftIO $ BC.putStrLn toPrint-}
     case updatesEither result of
       Left err ->
         liftIO $ log hLogger Error "Got incorrect getUpdates JSON data"
@@ -89,26 +88,31 @@ processUpdate update@ParseJSON.Update {update = MessageType (Message {..}), ..} 
   repeatMap <- readIORef repeatMapRef
   -----------------------------------
   let repeat = howMuch env update repeatMap
+  -- any text?
   case text of
     Nothing -> do
-      makeMultipleRequest env repeat copyMessage -- TODO check
+      makeMultipleRequest env repeat update copyMessage
     Just txt -> do
+      return ()
+      -- command or message?
       case txt of
         "/help" -> do
           let helpMessage =
                 Data.Request.sendMessage id (Data.Request.help funcConfig)
-          liftIO $ makeRequest env helpMessage -- TODO check
-          return ()
+          result <- liftIO $ makeRequest env helpMessage
+          let toCheck = fromRight "BAD RESULT" result
+          checkSuccess "sendMessage" hLogger toCheck update
         "/repeat" -> do
           let repeatMessage =
                 Data.Request.sendMessage
                   id
                   (Data.Request.question funcConfig <> ": " <> showText repeat) `addQuery`
                 Data.Request.addKeyboardMarkup
-          liftIO $ makeRequest env repeatMessage
-          return ()
+          result <- liftIO $ makeRequest env repeatMessage
+          let toCheck = fromRight "BAD RESULT" result
+          checkSuccess "sendMessage" hLogger toCheck update
         _ -> do
-          makeMultipleRequest env repeat copyMessage -- TODO check
+          makeMultipleRequest env repeat update copyMessage
 processUpdate update@ParseJSON.Update { update = CallbackQueryType (CallbackQuery {..})
                                       , ..
                                       } = do
@@ -123,10 +127,8 @@ processUpdate update@ParseJSON.Update { update = CallbackQueryType (CallbackQuer
       modifyIORef repeatMapRef (M.insert user_id newRepeat)
       let answerCallbackQuery = Data.Request.answerCallbackQuery callback_id
       result <- liftIO $ makeRequest env answerCallbackQuery
-      let toPrint = fromRight "" result
-      liftIO $ BC.putStrLn toPrint
-      return ()
-processUpdate _ = return ()
+      let toCheck = fromRight "BAD RESULT" result
+      checkSuccess "answerCallbackQuery" hLogger toCheck update
 
 readConfig =
   BC.readFile "config.yaml" `catch`
@@ -145,8 +147,73 @@ updatesEither result =
 makeRequest Env {..} req =
   Request.Imp.withHandle reqConfig hLogger req (runExceptT . Request.perform)
 
-makeMultipleRequest env repeat = replicateM_ repeat . liftIO . makeRequest env
+makeMultipleRequest ::
+     (MonadReader Env m, MonadIO m)
+  => Env
+  -> Int
+  -> ParseJSON.Update
+  -> Data.Request.Info
+  -> m ()
+makeMultipleRequest env repeat update req = do
+  Env {..} <- ask
+  eitherResultList <- replicateM repeat . liftIO . makeRequest env $ req
+  let resultList = map (fromRight "BAD RESULT") eitherResultList
+  forM_ resultList $ \result -> checkSuccess "copyMessage" hLogger result update
 
 howMuch Env {..} ParseJSON.Update {update = MessageType (Message {..}), ..} repeatMap =
   maybe (Data.Request.repeat funcConfig) (\a -> a) (M.lookup id repeatMap)
 howMuch _ _ _ = 1
+
+createTextError method =
+  "Result decoding failed, can't check " <> method <> " request success"
+
+apiError = "Got incorrect response, API is broken"
+
+approved m = m <> " request acknowledged!"
+
+notApproved m = m <> " request is not acknowledged!"
+
+checkSuccess ::
+     (MonadReader Env m, MonadIO m)
+  => Text
+  -> Logger.Handle
+  -> ByteString
+  -> ParseJSON.Update
+  -> m ()
+checkSuccess _ _ "BAD RESULT" _ = return ()
+checkSuccess m@"sendMessage" hLogger result update@ParseJSON.Update {update = MessageType message} = do
+  let eitherAnswer = eitherDecodeStrict' result
+  case eitherAnswer of
+    Left err -> do
+      liftIO $ log hLogger Error $ createTextError m
+    Right (ParseJSON.Msg ok msg) ->
+      liftIO $
+      if ok -- parsing to message is enough to ack
+        then log hLogger Info $ approved m
+        else log hLogger Warn $ notApproved m
+    Right _ -> liftIO $ log hLogger Warn $ apiError
+checkSuccess "sendMessage" _ _ _ = return ()
+checkSuccess m@"copyMessage" hLogger result update@ParseJSON.Update {update = MessageType (Message {..})} = do
+  let eitherAnswer = eitherDecodeStrict' result
+  case eitherAnswer of
+    Left err -> do
+      liftIO $ log hLogger Error $ createTextError m
+    Right (ParseJSON.CopyMsg ok msg_id) ->
+      liftIO $
+      if ok == True -- parsing to message_id is enough
+        then log hLogger Info $ approved m
+        else log hLogger Warn $ notApproved m
+    Right _ -> liftIO $ log hLogger Warn $ apiError
+checkSuccess "copyMessage" _ _ _ = return ()
+checkSuccess m@"answerCallbackQuery" hLogger result _ = do
+  let eitherAnswer = eitherDecodeStrict' result
+  case eitherAnswer of
+    Left err -> do
+      liftIO $ log hLogger Error $ createTextError m
+    Right (ParseJSON.Cbq ok ok_) ->
+      liftIO $
+      if ok && ok_
+        then log hLogger Info $ approved m
+        else log hLogger Warn $ notApproved m
+    Right _ -> liftIO $ log hLogger Warn $ apiError
+checkSuccess _ _ _ _ = return ()
