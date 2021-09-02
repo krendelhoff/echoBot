@@ -19,13 +19,14 @@ import           Relude                hiding (Handle, log)
 
 import           Miscellanea
 
-data Handle =
+newtype Handle =
   Handle
-    { perform :: forall m. (MonadIO m, MonadError Error m, MonadCatch m) =>
-                             m ByteString
+    { perform :: ExceptT Error IO ByteString
     }
+    {-perform :: forall m. (MonadIO m, MonadError Error m, MonadCatch m) =>
+why don't work with ghc 9.0.1?                           m ByteString-}
 
-data Config =
+newtype Config =
   Config
     { token :: Text
     }

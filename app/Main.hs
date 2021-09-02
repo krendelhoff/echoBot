@@ -1,6 +1,5 @@
 module Main where
 
-import qualified Data.ByteString.Char8 as BC
 import           Data.Request          (addQuery)
 import qualified Data.Request
 import           Logger                (Mode (..), Priority (..), log)
@@ -14,9 +13,10 @@ import           ParseJSON             (CallbackQuery (..), Message (..),
 import qualified ParseJSON
 
 import           Control.Exception
+import           Control.Monad.Catch   hiding (catch)
 import           Control.Monad.Except
 import           Data.Aeson            (eitherDecodeStrict')
-import qualified Data.ByteString.Char8 as BC (readFile)
+import qualified Data.ByteString.Char8 as BC
 import           Data.Either           (fromRight, isRight)
 import qualified Data.Map              as M
 import           Data.Text             (Text)
@@ -67,10 +67,8 @@ bot = do
   offset <- readIORef offsetRef
   -----------------------------
   let getUpdates = Data.Request.getUpdates offset funcConfig
-  result <- liftIO $ makeRequest env getUpdates
+  result <- makeRequest env getUpdates
   when (isRight result) $ do
-    let toPrint = fromRight "" result
-      {-liftIO $ BC.putStrLn toPrint-}
     case updatesEither result of
       Left err ->
         liftIO $ log hLogger Error "Got incorrect getUpdates JSON data"
@@ -99,7 +97,7 @@ processUpdate update@ParseJSON.Update {update = MessageType (Message {..}), ..} 
         "/help" -> do
           let helpMessage =
                 Data.Request.sendMessage id (Data.Request.help funcConfig)
-          result <- liftIO $ makeRequest env helpMessage
+          result <- makeRequest env helpMessage
           let toCheck = fromRight "BAD RESULT" result
           checkSuccess "sendMessage" hLogger toCheck update
         "/repeat" -> do
@@ -108,7 +106,7 @@ processUpdate update@ParseJSON.Update {update = MessageType (Message {..}), ..} 
                   id
                   (Data.Request.question funcConfig <> ": " <> showText repeat) `addQuery`
                 Data.Request.addKeyboardMarkup
-          result <- liftIO $ makeRequest env repeatMessage
+          result <- makeRequest env repeatMessage
           let toCheck = fromRight "BAD RESULT" result
           checkSuccess "sendMessage" hLogger toCheck update
         _ -> do
@@ -126,7 +124,7 @@ processUpdate update@ParseJSON.Update { update = CallbackQueryType (CallbackQuer
     Just newRepeat -> do
       modifyIORef repeatMapRef (M.insert user_id newRepeat)
       let answerCallbackQuery = Data.Request.answerCallbackQuery callback_id
-      result <- liftIO $ makeRequest env answerCallbackQuery
+      result <- makeRequest env answerCallbackQuery
       let toCheck = fromRight "BAD RESULT" result
       checkSuccess "answerCallbackQuery" hLogger toCheck update
 
@@ -138,13 +136,19 @@ readConfig =
      TIO.putStrLn $ showText (exception :: SomeException)
      exitFailure)
 
-runBot bot rdr = runReaderT (bot) rdr
+runBot = runReaderT
 
 updatesEither result =
   let rawJSON = fromRight "" result
    in eitherDecodeStrict' rawJSON
 
+makeRequest ::
+     (MonadReader Env m, MonadIO m)
+  => Env
+  -> Data.Request.Info
+  -> m (Either Request.Error ByteString)
 makeRequest Env {..} req =
+  liftIO $
   Request.Imp.withHandle reqConfig hLogger req (runExceptT . Request.perform)
 
 makeMultipleRequest ::
@@ -156,7 +160,7 @@ makeMultipleRequest ::
   -> m ()
 makeMultipleRequest env repeat update req = do
   Env {..} <- ask
-  eitherResultList <- replicateM repeat . liftIO . makeRequest env $ req
+  eitherResultList <- replicateM repeat $ makeRequest env req
   let resultList = map (fromRight "BAD RESULT") eitherResultList
   forM_ resultList $ \result -> checkSuccess "copyMessage" hLogger result update
 
