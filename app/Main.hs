@@ -132,7 +132,7 @@ readConfig =
   BC.readFile "config.yaml" `catch`
   (\exception -> do
      TIO.putStrLn "Can't open crucial config.yaml file!"
-     TIO.putStrLn $ "Here is what happened:"
+     TIO.putStrLn "Here is what happened:"
      TIO.putStrLn $ showText (exception :: SomeException)
      exitFailure)
 

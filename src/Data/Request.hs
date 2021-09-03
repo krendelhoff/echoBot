@@ -56,7 +56,7 @@ create Network.Request.Config {..} Info {..} =
   setRequestMethod "GET" $
   setRequestHost "api.telegram.org" $
   setRequestQueryString qStr $
-  setRequestPort 443 $ setRequestSecure True $ defaultRequest
+  setRequestPort 443 $ setRequestSecure True defaultRequest
   where
     path = "/bot" <> encodeUtf8 token <> "/" <> method
 
