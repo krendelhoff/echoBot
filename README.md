@@ -33,4 +33,4 @@ $ stack exec echoBot-exe
 ## Features
 1. If you send a message to the bot, it will echo it back several times (as specified by the /repeat command or default repeat value)
 2. /help command is intended to tell the bot usage to the user, the text is specified by the config file
-3. You can specify the number of echoes with /repeat command.
+3. You can specify the number of echoes with the /repeat command.
