@@ -9,3 +9,4 @@ updates.hajson
 echoBot.cabal
 stack.yaml.lock
 log.txt
+config.yaml

@@ -9,5 +9,5 @@ file: log.txt
 
 # Bot config
 question: Current repeat value
-help: You're my frien now :>
+help: I'm the echo bot.
 repeat: 1
