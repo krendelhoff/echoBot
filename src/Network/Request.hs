@@ -19,12 +19,13 @@ import           Relude                hiding (Handle, log)
 
 import           Miscellanea
 
+-- why this don't work with ghc 9.0.1?
+-- only this: perform :: ExceptT Error IO ByteString
 newtype Handle =
   Handle
-    { perform :: ExceptT Error IO ByteString
+    { perform :: forall m. (MonadIO m, MonadError Error m, MonadCatch m) =>
+                             m ByteString
     }
-    {-perform :: forall m. (MonadIO m, MonadError Error m, MonadCatch m) =>
-why don't work with ghc 9.0.1?                           m ByteString-}
 
 newtype Config =
   Config
