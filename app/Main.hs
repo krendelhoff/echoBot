@@ -17,7 +17,6 @@ import           Control.Monad.Catch   hiding (catch)
 import           Control.Monad.Except
 import           Data.Aeson            (eitherDecodeStrict')
 import qualified Data.ByteString.Char8 as BC
-import           Data.Either           (fromRight, isRight)
 import qualified Data.Map              as M
 import           Data.Text             (Text)
 import qualified Data.Text             as T
@@ -36,7 +35,7 @@ data Env =
 
 main :: IO ()
 main = do
-  return ()
+  pass
   -- reading config
   rawData <- readConfig
   cLogger <- Logger.Display.parseConfig rawData
@@ -76,7 +75,7 @@ bot = do
         forM_ updates processUpdate
 
 processUpdate :: (MonadReader Env m, MonadIO m) => ParseJSON.Update -> m ()
-processUpdate update@ParseJSON.Update {update = MessageType (Message {..}), ..} = do
+processUpdate update@ParseJSON.Update {update = MessageType Message {..}, ..} = do
   env@Env {..} <- ask
   {-- MUTATING STATE --}
   writeIORef offsetRef $ succ update_id
@@ -204,7 +203,7 @@ checkSuccess m@"copyMessage" hLogger result update@ParseJSON.Update {update = Me
       liftIO $ log hLogger Error $ createTextError m
     Right (ParseJSON.CopyMsg ok msg_id) ->
       liftIO $
-      if ok == True -- parsing to message_id is enough
+      if ok
         then log hLogger Info $ approved m
         else log hLogger Warn $ notApproved m
     Right _ -> liftIO $ log hLogger Warn $ apiError
