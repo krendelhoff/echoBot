@@ -6,7 +6,7 @@
 * [Features](#features)
 
 ## Introduction
-This is a simple telegram bot, that just echoes back whatever you send it.
+This is a simple telegram bot that just echoes back whatever you send it.
 
 ## Setup
 At first, you have to build the project, using the stack tool:
